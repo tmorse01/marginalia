@@ -55,8 +55,14 @@ export default function ActivityLog({ noteId }: ActivityLogProps) {
 
   if (activities.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No activity yet</p>
+      <div className="border-t border-base-300 mt-8 pt-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Clock size={20} />
+          Activity
+        </h3>
+        <div className="alert alert-info">
+          <p className="text-sm">No activity yet</p>
+        </div>
       </div>
     )
   }
@@ -71,16 +77,20 @@ export default function ActivityLog({ noteId }: ActivityLogProps) {
         {activities.map((activity) => (
           <div
             key={activity._id}
-            className="flex items-start gap-3 p-3 bg-base-200 rounded-lg"
+            className="card bg-base-200 border border-base-300"
           >
-            <div className="mt-0.5 text-gray-500">
-              {getActivityIcon(activity.type)}
-            </div>
-            <div className="flex-1">
-              <p className="text-sm">{getActivityText(activity)}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                {new Date(activity.createdAt).toLocaleString()}
-              </p>
+            <div className="card-body p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 text-primary">
+                  {getActivityIcon(activity.type)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{getActivityText(activity)}</p>
+                  <p className="text-xs text-base-content/60 mt-1">
+                    {new Date(activity.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ))}

@@ -2,6 +2,7 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { ConvexProvider } from 'convex/react'
+import { useEffect } from 'react'
 
 import Header from '../components/Header'
 import { convex } from '../lib/convex'
@@ -34,12 +35,18 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  // Initialize theme from localStorage or default to dark
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark'
+    document.documentElement.setAttribute('data-theme', savedTheme)
+  }, [])
+
   return (
-    <html lang="en" data-theme="light">
+    <html lang="en" data-theme="dark">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="bg-base-100 text-base-content">
         <ConvexProvider client={convex}>
           <Header />
           <main className="container mx-auto px-4 py-8">

@@ -4,11 +4,14 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Edit, Eye, Share2 } from 'lucide-react'
 import NoteEditor from '../../components/NoteEditor'
-import MarkdownViewer from '../../components/MarkdownViewer'
+import CommentableContent from '../../components/CommentableContent'
 import PresenceIndicator from '../../components/PresenceIndicator'
 import CommentThread from '../../components/CommentThread'
 import ShareDialog from '../../components/ShareDialog'
 import ActivityLog from '../../components/ActivityLog'
+import LiveCursorOverlay from '../../components/LiveCursorOverlay'
+import { useCurrentUser } from '../../lib/auth'
+import { useNotePresence } from '../../lib/presence'
 
 export const Route = createFileRoute('/notes/$noteId')({
   component: NotePage,
@@ -19,12 +22,22 @@ function NotePage() {
   const navigate = useNavigate()
   const note = useQuery(api.notes.get, { noteId: noteId as any })
   const updateNote = useMutation(api.notes.update)
+  const currentUserId = useCurrentUser()
+  const activeUsers = useQuery(api.presence.getActiveUsers, { noteId: noteId as any })
+  const commentCounts = useQuery(api.comments.getUnresolvedCounts, { noteId: noteId as any })
   
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [cursorStart, setCursorStart] = useState<number | undefined>(undefined)
+  const [cursorEnd, setCursorEnd] = useState<number | undefined>(undefined)
+  
+  // Pending comment state (from hover-to-comment)
+  const [pendingCommentLine, setPendingCommentLine] = useState<{
+    lineNumber: number
+    lineContent: string
+  } | null>(null)
 
   // Update local state when note loads
   useEffect(() => {
@@ -58,6 +71,26 @@ function NotePage() {
 
     return () => clearTimeout(timeoutId)
   }, [title, content, isEditing, note, noteId, updateNote])
+
+  useNotePresence({
+    noteId: noteId as any,
+    userId: currentUserId,
+    mode: isEditing ? 'editing' : 'viewing',
+    cursorStart: isEditing ? cursorStart : undefined,
+    cursorEnd: isEditing ? cursorEnd : undefined,
+  })
+
+  // Handle hover-to-comment
+  const handleCommentLine = (lineNumber: number, lineContent: string) => {
+    setPendingCommentLine({ lineNumber, lineContent })
+    // Scroll to comment section
+    setTimeout(() => {
+      document.getElementById('comments-section')?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }, 100)
+  }
 
   if (note === undefined) {
     return (
@@ -102,24 +135,24 @@ function NotePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowShareDialog(true)}
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-sm gap-2"
               >
                 <Share2 size={16} />
-                Share
+                <span className="hidden sm:inline">Share</span>
               </button>
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="btn btn-ghost btn-sm"
+                className={`btn btn-sm gap-2 ${isEditing ? 'btn-primary' : 'btn-ghost'}`}
               >
                 {isEditing ? (
                   <>
                     <Eye size={16} />
-                    View
+                    <span className="hidden sm:inline">View</span>
                   </>
                 ) : (
                   <>
                     <Edit size={16} />
-                    Edit
+                    <span className="hidden sm:inline">Edit</span>
                   </>
                 )}
               </button>
@@ -128,30 +161,49 @@ function NotePage() {
 
           <PresenceIndicator
             noteId={noteId as any}
-            currentUserId={note.ownerId}
+            currentUserId={currentUserId}
+            activeUsers={activeUsers ?? undefined}
           />
 
-          <div className="mt-4">
+          <div className="mt-4 relative">
             {isEditing ? (
               <NoteEditor
                 content={content}
                 onChange={setContent}
                 placeholder="Start writing in Markdown..."
+                onCursorChange={(start, end) => {
+                  setCursorStart(start)
+                  setCursorEnd(end)
+                }}
               />
             ) : (
-              <MarkdownViewer content={content} />
+              <>
+                <LiveCursorOverlay
+                  content={content}
+                  entries={activeUsers ?? []}
+                  currentUserId={currentUserId}
+                />
+                <CommentableContent
+                  content={content}
+                  onCommentLine={handleCommentLine}
+                  commentCountsByLine={commentCounts ?? {}}
+                />
+              </>
             )}
           </div>
 
           {!isEditing && (
-            <>
+            <div id="comments-section">
               <CommentThread
                 noteId={noteId as any}
                 noteContent={content}
-                currentUserId={note.ownerId}
+                currentUserId={currentUserId}
+                noteOwnerId={note.ownerId}
+                pendingCommentLine={pendingCommentLine}
+                onCancelPendingComment={() => setPendingCommentLine(null)}
               />
               <ActivityLog noteId={noteId as any} />
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -164,4 +216,3 @@ function NotePage() {
     </div>
   )
 }
-

@@ -44,11 +44,19 @@ function HomePage() {
           <span className="loading loading-spinner loading-lg"></span>
         </div>
       ) : notes.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">No notes yet. Create your first note!</p>
-          <Link to="/notes/new" className="btn btn-primary">
-            Create Note
-          </Link>
+        <div className="hero bg-base-200 rounded-lg py-12">
+          <div className="hero-content text-center">
+            <div className="max-w-md">
+              <h2 className="text-2xl font-bold mb-4">No notes yet</h2>
+              <p className="text-base-content/60 mb-6">
+                Create your first note to get started with Marginalia!
+              </p>
+              <Link to="/notes/new" className="btn btn-primary">
+                <Plus size={20} />
+                Create Note
+              </Link>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -57,16 +65,16 @@ function HomePage() {
               key={note._id}
               to="/notes/$noteId"
               params={{ noteId: note._id }}
-              className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow"
+              className="card bg-base-100 border border-base-300 shadow-lg hover:shadow-xl transition-all hover:border-primary/50"
             >
               <div className="card-body">
-                <h2 className="card-title">{note.title || 'Untitled'}</h2>
-                <p className="text-sm text-gray-500 line-clamp-2">
+                <h2 className="card-title text-primary">{note.title || 'Untitled'}</h2>
+                <p className="text-sm text-base-content/60 line-clamp-2">
                   {note.content.substring(0, 100)}
                   {note.content.length > 100 ? '...' : ''}
                 </p>
                 <div className="card-actions justify-end mt-2">
-                  <span className="badge badge-ghost">
+                  <span className="badge badge-outline">
                     {new Date(note.updatedAt).toLocaleDateString()}
                   </span>
                 </div>

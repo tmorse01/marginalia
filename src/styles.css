@@ -1,10 +1,14 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap");
+@plugin "daisyui" {
+  themes: all;
+}
+@plugin "@tailwindcss/typography";
 
 body {
   @apply m-0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -18,6 +22,9 @@ code {
 /* Prose styling for markdown */
 .prose {
   @apply text-base;
+  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
 }
 
 .prose h1 {
@@ -61,5 +68,224 @@ code {
 }
 
 .prose a {
+  @apply text-primary hover:underline;
+}
+
+/* Inline preview tweaks for the editor */
+.markdown-inline-preview {
+  @apply prose-sm max-w-none leading-relaxed;
+}
+
+.markdown-inline-preview p {
+  @apply mb-4;
+}
+
+/* Live Preview Editor Styles */
+.editor-lines-container {
+  @apply min-h-full;
+}
+
+.editor-line {
+  @apply min-h-[1.5em] whitespace-pre-wrap break-words;
+}
+
+.editor-line-focused {
+  @apply font-mono;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.editor-line-rendered {
+  /* Line height matches textarea */
+}
+
+.editor-line-empty {
+  @apply text-base-content/50;
+}
+
+.editor-line-wrapper {
+  @apply block;
+}
+
+/* Inline elements */
+.editor-bold {
+  @apply font-bold;
+}
+
+.editor-italic {
+  @apply italic;
+}
+
+.editor-inline-code {
+  @apply bg-base-200 px-1.5 py-0.5 rounded text-sm font-mono;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.editor-link {
+  @apply text-primary hover:underline cursor-pointer;
+}
+
+.editor-strikethrough {
+  @apply line-through;
+}
+
+/* Block elements */
+.editor-header {
+  @apply font-bold mb-2 mt-4;
+}
+
+.editor-header-1 {
+  @apply text-3xl;
+}
+
+.editor-header-2 {
+  @apply text-2xl;
+}
+
+.editor-header-3 {
+  @apply text-xl;
+}
+
+.editor-header-4 {
+  @apply text-lg;
+}
+
+.editor-header-5 {
+  @apply text-base;
+}
+
+.editor-header-6 {
+  @apply text-sm;
+}
+
+.editor-list-item {
+  @apply flex items-start mb-1;
+}
+
+.editor-list-marker {
+  @apply mr-2 flex-shrink-0;
+}
+
+.editor-list-content {
+  @apply flex-1;
+}
+
+.editor-list-unordered {
+  @apply list-none;
+}
+
+.editor-list-ordered {
+  @apply list-none;
+}
+
+.editor-blockquote {
+  @apply flex items-start border-l-4 border-primary pl-4 italic my-2;
+}
+
+.editor-blockquote-marker {
+  @apply mr-2 flex-shrink-0;
+}
+
+.editor-blockquote-content {
+  @apply flex-1;
+}
+
+.editor-hr {
+  @apply border-t border-base-300 my-4;
+}
+
+.editor-paragraph {
+  @apply mb-2;
+}
+
+.editor-line-code-fence {
+  @apply font-mono text-sm bg-base-200 px-2 py-1 rounded;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* Commentable Content - Hover to comment on lines */
+.commentable-content {
+  @apply relative;
+}
+
+.commentable-line {
+  @apply flex items-start relative;
+  min-height: 1.5em;
+}
+
+.commentable-line:hover {
+  @apply bg-base-200/50;
+}
+
+.commentable-line-gutter {
+  @apply flex-shrink-0 w-8 flex items-center justify-center;
+  min-height: inherit;
+}
+
+.commentable-line-content {
+  @apply flex-1 py-0.5;
+}
+
+.commentable-line-content.has-comments {
+  @apply bg-primary/10 border-l-2 border-primary pl-2;
+}
+
+/* Comment indicator badge (shows count) */
+.comment-indicator {
+  @apply w-5 h-5 rounded-full bg-primary text-primary-content 
+         text-xs font-bold flex items-center justify-center 
+         cursor-pointer hover:bg-primary/80 transition-colors;
+}
+
+/* Add comment button (appears on hover) */
+.comment-add-btn {
+  @apply w-6 h-6 rounded flex items-center justify-center
+         text-base-content/40 hover:text-primary hover:bg-primary/10
+         cursor-pointer transition-all opacity-0;
+}
+
+.comment-add-btn.visible {
+  @apply opacity-100;
+}
+
+.commentable-line:hover .comment-add-btn {
+  @apply opacity-100;
+}
+
+/* Inline markdown rendering for single lines */
+.inline-markdown p {
+  @apply m-0 inline;
+}
+
+.inline-markdown h1,
+.inline-markdown h2,
+.inline-markdown h3,
+.inline-markdown h4,
+.inline-markdown h5,
+.inline-markdown h6 {
+  @apply font-bold m-0;
+}
+
+.inline-markdown h1 { @apply text-2xl; }
+.inline-markdown h2 { @apply text-xl; }
+.inline-markdown h3 { @apply text-lg; }
+
+.inline-markdown ul,
+.inline-markdown ol {
+  @apply m-0 pl-4;
+}
+
+.inline-markdown li {
+  @apply m-0;
+}
+
+.inline-markdown code {
+  @apply bg-base-200 px-1 py-0.5 rounded text-sm;
+}
+
+.inline-markdown blockquote {
+  @apply border-l-2 border-primary pl-2 m-0 italic;
+}
+
+.inline-markdown a {
   @apply text-primary hover:underline;
 }

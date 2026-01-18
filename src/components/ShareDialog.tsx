@@ -170,29 +170,40 @@ export default function ShareDialog({
                     <span className="loading loading-spinner"></span>
                   </div>
                 ) : permissions.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No shared users yet</p>
+                  <div className="alert alert-info">
+                    <p className="text-sm">No shared users yet</p>
+                  </div>
                 ) : (
                   permissions.map((perm) => (
                     <div
                       key={perm._id}
-                      className="flex justify-between items-center p-3 bg-base-200 rounded-lg"
+                      className="card bg-base-200 border border-base-300"
                     >
-                      <div>
-                        <p className="font-medium text-sm">
-                          {perm.user?.name || perm.user?.email || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-gray-500 capitalize">
-                          {perm.role}
-                        </p>
+                      <div className="card-body p-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium text-sm">
+                              {perm.user?.name || perm.user?.email || 'Unknown'}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="badge badge-outline badge-sm capitalize">
+                                {perm.role}
+                              </span>
+                              {perm.role === 'owner' && (
+                                <span className="badge badge-primary badge-sm">Owner</span>
+                              )}
+                            </div>
+                          </div>
+                          {perm.role !== 'owner' && (
+                            <button
+                              onClick={() => handleRevoke(perm.userId)}
+                              className="btn btn-sm btn-ghost text-error"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {perm.role !== 'owner' && (
-                        <button
-                          onClick={() => handleRevoke(perm.userId)}
-                          className="btn btn-sm btn-ghost text-error"
-                        >
-                          Remove
-                        </button>
-                      )}
                     </div>
                   ))
                 )}

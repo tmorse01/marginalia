@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
+import ThemeSelector from './ThemeSelector'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -28,6 +29,7 @@ export default function Header() {
             <Link to="/settings" className="btn btn-ghost">
               Settings
             </Link>
+            <ThemeSelector />
           </div>
         </div>
       </header>
@@ -65,6 +67,12 @@ export default function Header() {
               >
                 Settings
               </Link>
+              <div className="mt-4 pt-4 border-t border-base-300">
+                <div className="text-sm font-medium mb-2 px-2">Theme</div>
+                <div className="px-2">
+                  <ThemeSelector />
+                </div>
+              </div>
             </nav>
           </aside>
         </div>

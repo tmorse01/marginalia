@@ -33,13 +33,30 @@ export default defineSchema({
     noteId: v.id("notes"),
     authorId: v.id("users"),
     body: v.string(),
-    anchorStart: v.number(), // character position start
-    anchorEnd: v.number(), // character position end
+
+    // Line-based anchoring (GitHub PR style)
+    lineNumber: v.optional(v.number()), // 0-indexed line number (optional for migration)
+    lineContent: v.optional(v.string()), // Snapshot of line content when commented
+
+    // Legacy fields (deprecated, kept for migration)
+    anchorStart: v.optional(v.number()),
+    anchorEnd: v.optional(v.number()),
+
+    // Threading support
+    parentId: v.optional(v.id("comments")), // For replies
+
+    // Resolution status
     resolved: v.boolean(),
+    resolvedBy: v.optional(v.id("users")),
+    resolvedAt: v.optional(v.number()),
+
+    // Timestamps
+    editedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_note", ["noteId"])
-    .index("by_note_and_resolved", ["noteId", "resolved"]),
+    .index("by_note_and_resolved", ["noteId", "resolved"])
+    .index("by_parent", ["parentId"]),
 
   activityEvents: defineTable({
     noteId: v.id("notes"),
@@ -56,5 +73,16 @@ export default defineSchema({
   })
     .index("by_note", ["noteId"])
     .index("by_note_and_created", ["noteId", "createdAt"]),
+
+  presence: defineTable({
+    noteId: v.id("notes"),
+    userId: v.id("users"),
+    mode: v.union(v.literal("editing"), v.literal("viewing")),
+    cursorStart: v.optional(v.number()),
+    cursorEnd: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_note", ["noteId"])
+    .index("by_note_and_user", ["noteId", "userId"]),
 });
 

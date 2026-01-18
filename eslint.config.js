@@ -15,4 +15,9 @@ export default [
       'eslint.config.js',
     ],
   },
+  {
+    rules: {
+      'sort-imports': 'off',
+    },
+  },
 ]
