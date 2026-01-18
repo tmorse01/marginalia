@@ -309,19 +309,18 @@ export default function InlineCommentsPanel({
               const originalContent =
                 threads.length > 0 ? threads[0]?.lineContent || lineContent : lineContent
               const hasDrifted = lineContent !== originalContent && threads.length > 0
-              const isSelected = selectedLine === lineNum
 
               return (
                 <div
                   key={lineNum}
-                  className={`card bg-base-200 shadow-sm ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                  className="card bg-base-200 shadow-sm"
                 >
                   <div className="card-body p-3 gap-2">
                     {/* Line header */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => onLineSelect(isSelected ? null : lineNum)}
+                          onClick={() => onLineSelect(lineNum)}
                           className="font-bold text-sm text-primary hover:underline"
                         >
                           Line {lineNum + 1}
