@@ -2,10 +2,16 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import AlertToast from '../../components/AlertToast'
 import { useCurrentUser } from '../../lib/auth'
 
 export const Route = createFileRoute('/notes/new')({
   component: NewNotePage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      folderId: (search.folderId as string | undefined) || undefined,
+    }
+  },
 })
 
 const SAMPLE_NOTE_TITLE = 'Productive Notes: A Long-Form Example'
@@ -60,20 +66,25 @@ This note gives you enough length to test scrolling and layout stability. Try co
 
 function NewNotePage() {
   const navigate = useNavigate()
+  const { folderId } = Route.useSearch()
   const createNote = useMutation(api.notes.create)
   const userId = useCurrentUser()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState('')
 
   const handleCreate = async () => {
     if (!title.trim()) {
-      alert('Please enter a title')
+      setAlertMessage('Please enter a title')
+      setShowAlert(true)
       return
     }
 
     if (!userId) {
-      alert('Please wait for user to be initialized')
+      setAlertMessage('Please wait for user to be initialized')
+      setShowAlert(true)
       return
     }
 
@@ -83,15 +94,17 @@ function NewNotePage() {
         title: title.trim(),
         content,
         ownerId: userId,
+        folderId: folderId as any,
       })
       navigate({ to: '/notes/$noteId', params: { noteId } })
     } catch (error) {
       console.error('Failed to create note:', error)
-      alert(
+      setAlertMessage(
         error instanceof Error
           ? `Failed to create note: ${error.message}`
           : 'Failed to create note. Please try again.'
       )
+      setShowAlert(true)
     } finally {
       setIsCreating(false)
     }
@@ -178,6 +191,13 @@ function NewNotePage() {
           </div>
         </div>
       </div>
+
+      <AlertToast
+        isOpen={showAlert}
+        message={alertMessage}
+        type="error"
+        onClose={() => setShowAlert(false)}
+      />
     </div>
   )
 }

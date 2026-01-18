@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { Edit, Eye, Share2 } from 'lucide-react'
 import NoteEditor from '../../components/NoteEditor'
 import CommentableContent from '../../components/CommentableContent'
 import PresenceIndicator from '../../components/PresenceIndicator'
@@ -10,6 +9,8 @@ import GeneralComments from '../../components/GeneralComments'
 import ShareDialog from '../../components/ShareDialog'
 import ActivityLog from '../../components/ActivityLog'
 import LiveCursorOverlay from '../../components/LiveCursorOverlay'
+import RightSidebar from '../../components/RightSidebar'
+import NotePageHeader from '../../components/NotePageHeader'
 import { useCurrentUser } from '../../lib/auth'
 import { useNotePresence } from '../../lib/presence'
 
@@ -32,6 +33,9 @@ function NotePage() {
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [cursorStart, setCursorStart] = useState<number | undefined>(undefined)
   const [cursorEnd, setCursorEnd] = useState<number | undefined>(undefined)
+  const [selectedLine, setSelectedLine] = useState<number | null>(null)
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [activeTab, setActiveTab] = useState<'comments' | 'ai' | 'metadata'>('comments')
 
   // Extract line comments and general comments from API response
   const lineComments = allComments?.byLine ?? {}
@@ -103,40 +107,35 @@ function NotePage() {
   }
 
   return (
-    <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8 max-w-4xl">
-      <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden">
-        {/* Header Section with subtle background */}
-        <div className="bg-base-200/50 border-b border-base-300 px-3 py-3 sm:px-6 sm:py-5">
-          {/* Action buttons - right aligned above title */}
-          <div className="flex justify-end gap-2 mb-3">
-            <button
-              onClick={() => setShowShareDialog(true)}
-              className="btn btn-ghost btn-sm gap-2"
-            >
-              <Share2 size={16} />
-              <span className="hidden sm:inline">Share</span>
-            </button>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className={`btn btn-sm gap-2 ${isEditing ? 'btn-primary' : 'btn-ghost'}`}
-            >
-              {isEditing ? (
-                <>
-                  <Eye size={16} />
-                  <span className="hidden sm:inline">View</span>
-                </>
-              ) : (
-                <>
-                  <Edit size={16} />
-                  <span className="hidden sm:inline">Edit</span>
-                </>
-              )}
-            </button>
-          </div>
+    <div className="flex flex-col min-h-screen relative">
+      {/* Page Header */}
+      <NotePageHeader
+        note={note}
+        isEditing={isEditing}
+        onEditToggle={() => setIsEditing(!isEditing)}
+        showSidebar={showSidebar}
+        activeTab={activeTab}
+        onCommentsClick={() => {
+          setShowSidebar(true)
+          setActiveTab('comments')
+        }}
+        onAIChatClick={() => {
+          setShowSidebar(true)
+          setActiveTab('ai')
+        }}
+        onMetadataClick={() => {
+          setShowSidebar(true)
+          setActiveTab('metadata')
+        }}
+        onShareClick={() => setShowShareDialog(true)}
+      />
 
-          {/* Title - full width */}
-          <div className="w-full">
-            {isEditing ? (
+      {/* Main Content */}
+      <div className={`container mx-auto px-2 py-4 sm:px-4 sm:py-8 max-w-4xl flex-1 relative`}>
+        <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden">
+          {/* Title Section (when editing) */}
+          {isEditing && (
+            <div className="bg-base-200 border-b border-base-300 px-3 py-3 sm:px-6 sm:py-5">
               <input
                 type="text"
                 value={title}
@@ -144,50 +143,56 @@ function NotePage() {
                 className="input input-bordered w-full focus:border-primary focus:outline-none"
                 placeholder="Note title"
               />
-            ) : (
-              <h1 className="text-3xl font-bold text-base-content">{note.title}</h1>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="mt-3">
-            <PresenceIndicator
-              noteId={noteId as any}
-              currentUserId={currentUserId}
-              activeUsers={activeUsers ?? undefined}
-            />
-          </div>
-        </div>
+          {/* Presence Indicator */}
+          {!isEditing && (
+            <div className="bg-base-200 border-b border-base-300 px-3 py-2 sm:px-6">
+              <PresenceIndicator
+                noteId={noteId as any}
+                currentUserId={currentUserId}
+                activeUsers={activeUsers ?? undefined}
+              />
+            </div>
+          )}
 
-        {/* Content Section with clear separation */}
+        {/* Content Section */}
         <div className="card-body p-3 sm:p-6">
-          <div className={`relative ${isEditing ? 'bg-base-200/30 rounded-lg p-2 sm:p-4 border border-base-300' : 'bg-base-200/20 rounded-lg p-3 sm:p-6 border border-base-300/50'}`}>
-            {isEditing ? (
-              <NoteEditor
+          {isEditing ? (
+            <NoteEditor
+              content={content}
+              onChange={setContent}
+              placeholder="Start writing in Markdown..."
+              onCursorChange={(start, end) => {
+                setCursorStart(start)
+                setCursorEnd(end)
+              }}
+            />
+          ) : (
+            <>
+              <LiveCursorOverlay
                 content={content}
-                onChange={setContent}
-                placeholder="Start writing in Markdown..."
-                onCursorChange={(start, end) => {
-                  setCursorStart(start)
-                  setCursorEnd(end)
+                entries={activeUsers ?? []}
+                currentUserId={currentUserId}
+              />
+              <CommentableContent
+                content={content}
+                noteId={noteId as any}
+                commentsByLine={lineComments}
+                currentUserId={currentUserId}
+                noteOwnerId={note.ownerId}
+                selectedLine={selectedLine}
+                onLineSelect={setSelectedLine}
+                onOpenComments={() => {
+                  if (!showSidebar) {
+                    setShowSidebar(true)
+                    setActiveTab('comments')
+                  }
                 }}
               />
-            ) : (
-              <>
-                <LiveCursorOverlay
-                  content={content}
-                  entries={activeUsers ?? []}
-                  currentUserId={currentUserId}
-                />
-                <CommentableContent
-                  content={content}
-                  noteId={noteId as any}
-                  commentsByLine={lineComments}
-                  currentUserId={currentUserId}
-                  noteOwnerId={note.ownerId}
-                />
-              </>
-            )}
-          </div>
+            </>
+          )}
 
           {!isEditing && (
             <div id="comments-section" className="mt-6">
@@ -208,6 +213,26 @@ function NotePage() {
         isOpen={showShareDialog}
         onClose={() => setShowShareDialog(false)}
       />
+
+      {/* Right Sidebar - positioned in existing margin space */}
+      {showSidebar && !isEditing && (
+        <div className="absolute right-[-336px] top-4 bottom-4 w-80 z-10">
+          <RightSidebar
+            noteId={noteId as any}
+            note={note}
+            commentsByLine={lineComments as any}
+            selectedLine={selectedLine}
+            onLineSelect={setSelectedLine}
+            currentUserId={currentUserId}
+            noteOwnerId={note.ownerId}
+            content={content}
+            showAllComments={true}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+      )}
+      </div>
     </div>
   )
 }

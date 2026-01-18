@@ -11,6 +11,7 @@
 import type * as activity from "../activity.js";
 import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
+import type * as folders from "../folders.js";
 import type * as notes from "../notes.js";
 import type * as permissions from "../permissions.js";
 import type * as presence from "../presence.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   activity: typeof activity;
   auth: typeof auth;
   comments: typeof comments;
+  folders: typeof folders;
   notes: typeof notes;
   permissions: typeof permissions;
   presence: typeof presence;

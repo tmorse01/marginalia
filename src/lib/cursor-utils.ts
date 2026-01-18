@@ -135,3 +135,34 @@ export function isOffsetInLineRange(
   return line >= startLine && line <= endLine
 }
 
+/**
+ * Measure the actual character width for monospace font
+ * Uses a canvas-based measurement for accuracy
+ */
+export function measureCharWidth(fontSize: number, fontFamily: string): number {
+  // Create a temporary canvas to measure text
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  if (!context) {
+    // Fallback to approximate width
+    return fontSize * 0.6
+  }
+
+  context.font = `${fontSize}px ${fontFamily}`
+  const metrics = context.measureText('M')
+  return metrics.width
+}
+
+/**
+ * Calculate column from click position, accounting for padding
+ * Returns the approximate column in the raw markdown line
+ */
+export function clickPositionToColumn(
+  clickX: number,
+  paddingLeft: number,
+  charWidth: number
+): number {
+  const x = clickX - paddingLeft
+  return Math.max(0, Math.floor(x / charWidth))
+}
+

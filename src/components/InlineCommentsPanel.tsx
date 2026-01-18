@@ -34,28 +34,27 @@ interface CommentWithReplies extends CommentData {
   replies: Array<CommentData>
 }
 
-interface CommentPopoverProps {
+interface InlineCommentsPanelProps {
   noteId: Id<'notes'>
-  lineNumber: number
-  lineContent: string
-  threads: Array<CommentWithReplies>
+  commentsByLine: Partial<Record<number, Array<CommentWithReplies>>>
+  selectedLine: number | null
+  onLineSelect: (lineNumber: number | null) => void
   currentUserId?: Id<'users'>
   noteOwnerId?: Id<'users'>
-  currentLineContent: string // For drift detection
-  onClose: () => void
-  position: 'right' | 'bottom' // Desktop vs mobile (for styling hints)
+  content: string
+  showAllComments?: boolean
 }
 
-export default function CommentPopover({
+export default function InlineCommentsPanel({
   noteId,
-  lineNumber,
-  lineContent,
-  threads,
+  commentsByLine,
+  selectedLine,
+  onLineSelect,
   currentUserId,
   noteOwnerId,
-  currentLineContent,
-  onClose,
-}: CommentPopoverProps) {
+  content,
+  showAllComments = false,
+}: InlineCommentsPanelProps) {
   const createComment = useMutation(api.comments.create)
   const replyToComment = useMutation(api.comments.reply)
   const resolveComment = useMutation(api.comments.resolve)
@@ -69,16 +68,23 @@ export default function CommentPopover({
   const [editText, setEditText] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState<Id<'comments'> | null>(null)
 
-  const isDrifted = currentLineContent !== lineContent
+  const lines = content.split('\n')
+  const currentThreads = selectedLine !== null ? (commentsByLine[selectedLine] || []) : []
+  const currentLineContent = selectedLine !== null ? lines[selectedLine] || '' : ''
+  const originalLineContent =
+    selectedLine !== null && currentThreads.length > 0
+      ? currentThreads[0]?.lineContent || currentLineContent
+      : currentLineContent
+  const isDrifted = selectedLine !== null && currentLineContent !== originalLineContent && currentThreads.length > 0
 
   const handleCreate = async () => {
-    if (!newComment.trim() || !currentUserId) return
+    if (!newComment.trim() || !currentUserId || selectedLine === null) return
     try {
       await createComment({
         noteId,
         authorId: currentUserId,
         body: newComment.trim(),
-        lineNumber,
+        lineNumber: selectedLine,
         lineContent: currentLineContent,
       })
       setNewComment('')
@@ -136,17 +142,20 @@ export default function CommentPopover({
     }
   }
 
-  const canResolve = (c: CommentData) => 
+  const canResolve = (c: CommentData) =>
     currentUserId && (c.authorId === currentUserId || noteOwnerId === currentUserId)
   const canEdit = (c: CommentData) => currentUserId && c.authorId === currentUserId
-  const canDelete = (c: CommentData) => 
+  const canDelete = (c: CommentData) =>
     currentUserId && (c.authorId === currentUserId || noteOwnerId === currentUserId)
 
   const renderComment = (comment: CommentData, isReply = false) => {
     const isEditing = editingId === comment._id
 
     return (
-      <div key={comment._id} className={`${isReply ? 'ml-4 pl-3 border-l-2 border-base-300' : ''}`}>
+      <div
+        key={comment._id}
+        className={`${isReply ? 'ml-4 pl-3 border-l-2 border-base-300' : ''}`}
+      >
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex-1 min-w-0">
             <span className="font-medium text-sm truncate">
@@ -159,7 +168,7 @@ export default function CommentPopover({
               <span className="text-xs text-base-content/40 ml-1">(edited)</span>
             )}
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {!isReply && canResolve(comment) && (
               <button
                 onClick={() => handleResolve(comment._id, !comment.resolved)}
@@ -171,7 +180,10 @@ export default function CommentPopover({
             )}
             {canEdit(comment) && (
               <button
-                onClick={() => { setEditingId(comment._id); setEditText(comment.body) }}
+                onClick={() => {
+                  setEditingId(comment._id)
+                  setEditText(comment.body)
+                }}
                 className="btn btn-xs btn-circle btn-ghost"
                 title="Edit"
               >
@@ -199,10 +211,19 @@ export default function CommentPopover({
               rows={2}
             />
             <div className="flex gap-1">
-              <button onClick={() => handleUpdate(comment._id)} className="btn btn-primary btn-xs">
+              <button
+                onClick={() => handleUpdate(comment._id)}
+                className="btn btn-primary btn-xs"
+              >
                 Save
               </button>
-              <button onClick={() => { setEditingId(null); setEditText('') }} className="btn btn-ghost btn-xs">
+              <button
+                onClick={() => {
+                  setEditingId(null)
+                  setEditText('')
+                }}
+                className="btn btn-ghost btn-xs"
+              >
                 Cancel
               </button>
             </div>
@@ -233,7 +254,10 @@ export default function CommentPopover({
               onKeyDown={(e) => e.key === 'Enter' && handleReply(comment._id)}
               autoFocus
             />
-            <button onClick={() => handleReply(comment._id)} className="btn btn-primary btn-sm btn-circle">
+            <button
+              onClick={() => handleReply(comment._id)}
+              className="btn btn-primary btn-sm btn-circle"
+            >
               <Send className="size-[1.2em]" strokeWidth={2.5} />
             </button>
           </div>
@@ -242,18 +266,137 @@ export default function CommentPopover({
     )
   }
 
+  // Get all lines with comments for "show all" mode
+  const allLinesWithComments = Object.keys(commentsByLine)
+    .map(Number)
+    .filter((lineNum) => (commentsByLine[lineNum] || []).length > 0)
+    .sort((a, b) => a - b)
+
+  // Show all comments mode (Word-style)
+  if (showAllComments) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-base-300 bg-base-200/50">
+          <h3 className="font-bold text-lg">All Comments</h3>
+        </div>
+
+        {/* Comments - scrollable area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {allLinesWithComments.length === 0 ? (
+            <div className="text-center py-8 text-base-content/50">
+              <p className="text-sm">No inline comments yet</p>
+              <p className="text-xs mt-1">Click a comment indicator to add one</p>
+            </div>
+          ) : (
+            allLinesWithComments.map((lineNum) => {
+              const threads = commentsByLine[lineNum] || []
+              const lineContent = lines[lineNum] || ''
+              const originalLineContent =
+                threads.length > 0 ? threads[0]?.lineContent || lineContent : lineContent
+              const isDrifted = lineContent !== originalLineContent && threads.length > 0
+              const isSelected = selectedLine === lineNum
+
+              return (
+                <div
+                  key={lineNum}
+                  className={`card bg-base-200 shadow-sm ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                >
+                  <div className="card-body p-3 gap-2">
+                    {/* Line header */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onLineSelect(isSelected ? null : lineNum)}
+                          className="font-bold text-sm text-primary hover:underline"
+                        >
+                          Line {lineNum + 1}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Line content preview */}
+                    <div className="px-2 py-1 bg-base-300/30 rounded text-xs mb-2">
+                      <code className="text-base-content/70 break-all line-clamp-2">
+                        {lineContent || '(empty line)'}
+                      </code>
+                    </div>
+
+                    {/* Drift warning */}
+                    {isDrifted && (
+                      <div className="alert alert-warning py-1 px-2 mb-2">
+                        <AlertTriangle size={12} />
+                        <span className="text-xs">Line content has changed</span>
+                      </div>
+                    )}
+
+                    {/* Comments for this line */}
+                    {threads.map((thread) => (
+                      <div
+                        key={thread._id}
+                        className={`${thread.resolved ? 'opacity-60' : ''}`}
+                      >
+                        {thread.resolved && (
+                          <div className="badge badge-success badge-sm gap-1 mb-1">
+                            <Check size={10} /> Resolved
+                          </div>
+                        )}
+                        {renderComment(thread)}
+                        {thread.replies.map((reply) => (
+                          <div key={reply._id} className="mt-2">
+                            {renderComment(reply, true)}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Single line view mode (when a line is selected)
+  // Empty state when no line is selected
+  if (selectedLine === null) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="text-center text-base-content/50">
+          <p className="text-sm">Click on a line to view comments</p>
+          <p className="text-xs mt-2">Or click the comment indicator on any line</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header - using DaisyUI card styling */}
+      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-base-300 bg-base-200/50">
-        <h3 className="font-bold text-lg">Line {lineNumber + 1}</h3>
-        <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
-          <X className="size-[1.2em]" strokeWidth={2.5} />
-        </button>
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold text-lg">Line {selectedLine + 1}</h3>
+          <button
+            onClick={() => onLineSelect(null)}
+            className="btn btn-sm btn-circle btn-ghost"
+            title="Close"
+          >
+            <X className="size-[1.2em]" strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
 
-      {/* Drift warning - using DaisyUI alert */}
-      {isDrifted && threads.length > 0 && (
+      {/* Line content preview */}
+      <div className="px-4 py-2 bg-base-300/30 border-b border-base-300">
+        <code className="text-xs text-base-content/70 break-all line-clamp-2">
+          {currentLineContent || '(empty line)'}
+        </code>
+      </div>
+
+      {/* Drift warning */}
+      {isDrifted && (
         <div className="alert alert-warning rounded-none py-2 px-4">
           <AlertTriangle size={14} />
           <span className="text-sm">Line content has changed since this comment</span>
@@ -262,13 +405,13 @@ export default function CommentPopover({
 
       {/* Comments - scrollable area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {threads.length === 0 ? (
+        {currentThreads.length === 0 ? (
           <div className="text-center py-8 text-base-content/50">
             <p className="text-sm">No comments yet</p>
             <p className="text-xs mt-1">Be the first to add one!</p>
           </div>
         ) : (
-          threads.map((thread) => (
+          currentThreads.map((thread) => (
             <div
               key={thread._id}
               className={`card bg-base-200 shadow-sm ${thread.resolved ? 'opacity-60' : ''}`}
@@ -291,7 +434,7 @@ export default function CommentPopover({
         )}
       </div>
 
-      {/* New comment input - using DaisyUI form controls */}
+      {/* New comment input */}
       {currentUserId && (
         <div className="p-4 border-t border-base-300 bg-base-200/30">
           <div className="join w-full">
@@ -327,3 +470,4 @@ export default function CommentPopover({
     </div>
   )
 }
+

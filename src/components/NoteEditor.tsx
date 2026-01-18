@@ -24,9 +24,35 @@ export default function NoteEditor({
   const linesRef = useRef<HTMLDivElement>(null)
   const [focusedLine, setFocusedLine] = useState<number | null>(null)
   const [editorHeight, setEditorHeight] = useState<number | undefined>(undefined)
+  const updateFocusedLineRef = useRef<number | null>(null)
 
   const lines = getLines(content)
   const isContentEmpty = lines.length === 0 || (lines.length === 1 && lines[0] === '')
+
+  // Consolidated function to update focused line
+  const updateFocusedLine = useCallback(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    // Cancel any pending update
+    if (updateFocusedLineRef.current !== null) {
+      cancelAnimationFrame(updateFocusedLineRef.current)
+    }
+
+    // Use requestAnimationFrame for smooth updates
+    updateFocusedLineRef.current = requestAnimationFrame(() => {
+      const cursorPos = textarea.selectionStart
+      const currentContent = textarea.value
+      const lineNum = getLineNumber(currentContent, cursorPos)
+      setFocusedLine(lineNum)
+
+      if (onCursorChange) {
+        onCursorChange(textarea.selectionStart, textarea.selectionEnd)
+      }
+
+      updateFocusedLineRef.current = null
+    })
+  }, [onCursorChange])
 
   // Auto-resize textarea (inline preview uses container height)
   useEffect(() => {
@@ -53,45 +79,19 @@ export default function NoteEditor({
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value
     onChange(newContent)
-
-    // Update focused line based on cursor position
-    const cursorPos = e.target.selectionStart
-    const lineNum = getLineNumber(newContent, cursorPos)
-    setFocusedLine(lineNum)
-
-    if (onCursorChange) {
-      onCursorChange(e.target.selectionStart, e.target.selectionEnd)
-    }
-  }, [onChange, onCursorChange])
+    updateFocusedLine()
+  }, [onChange, updateFocusedLine])
 
   // Handle selection changes
-  const handleSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget
-    const cursorPos = target.selectionStart
-    const lineNum = getLineNumber(content, cursorPos)
-    setFocusedLine(lineNum)
-
-    if (onCursorChange) {
-      onCursorChange(target.selectionStart, target.selectionEnd)
-    }
-  }, [content, onCursorChange])
+  const handleSelect = useCallback(() => {
+    updateFocusedLine()
+  }, [updateFocusedLine])
 
   // Handle key events to update focused line
   const handleKeyDown = useCallback(() => {
-    // Let default behavior happen first, then update focus
-    setTimeout(() => {
-      const textarea = textareaRef.current
-      if (textarea) {
-        const cursorPos = textarea.selectionStart
-        const lineNum = getLineNumber(content, cursorPos)
-        setFocusedLine(lineNum)
-
-        if (onCursorChange) {
-          onCursorChange(textarea.selectionStart, textarea.selectionEnd)
-        }
-      }
-    }, 0)
-  }, [content, onCursorChange])
+    // Update after key press completes
+    updateFocusedLine()
+  }, [updateFocusedLine])
 
   // Handle focus on a line (click on rendered line)
   const handleLineFocus = useCallback((lineIndex: number, col?: number) => {
@@ -104,27 +104,40 @@ export default function NoteEditor({
     const offset = lineColToOffset(content, lineIndex, col ?? 0)
     textarea.focus()
     textarea.setSelectionRange(offset, offset)
-  }, [content])
+    
+    // Update after setting cursor
+    updateFocusedLine()
+  }, [content, updateFocusedLine])
 
-  // Track focused line from cursor position
+  // Track focused line from cursor position - consolidated event listeners
   useEffect(() => {
     const textarea = textareaRef.current
     if (!textarea) return
 
-    const updateFocusedLine = () => {
-      const cursorPos = textarea.selectionStart
-      const lineNum = getLineNumber(content, cursorPos)
-      setFocusedLine(lineNum)
-    }
-
+    // Use input event for all text changes
+    textarea.addEventListener('input', updateFocusedLine)
+    // Use selectionchange for cursor movements
+    document.addEventListener('selectionchange', updateFocusedLine)
+    // Use keyup for keyboard navigation
     textarea.addEventListener('keyup', updateFocusedLine)
+    // Use click for mouse clicks
     textarea.addEventListener('click', updateFocusedLine)
+    // Use mouseup for drag selections
+    textarea.addEventListener('mouseup', updateFocusedLine)
 
     return () => {
+      textarea.removeEventListener('input', updateFocusedLine)
+      document.removeEventListener('selectionchange', updateFocusedLine)
       textarea.removeEventListener('keyup', updateFocusedLine)
       textarea.removeEventListener('click', updateFocusedLine)
+      textarea.removeEventListener('mouseup', updateFocusedLine)
+      
+      // Cancel any pending animation frame
+      if (updateFocusedLineRef.current !== null) {
+        cancelAnimationFrame(updateFocusedLineRef.current)
+      }
     }
-  }, [content])
+  }, [updateFocusedLine])
 
   if (!showInlinePreview) {
     // Simple, reliable textarea mode

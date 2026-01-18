@@ -9,16 +9,31 @@ export default defineSchema({
   })
     .index("by_email", ["email"]),
 
+  folders: defineTable({
+    name: v.string(),
+    ownerId: v.id("users"),
+    parentId: v.optional(v.id("folders")),
+    order: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_parent", ["parentId"])
+    .index("by_owner_and_parent", ["ownerId", "parentId"]),
+
   notes: defineTable({
     title: v.string(),
     content: v.string(), // markdown
     ownerId: v.id("users"),
+    folderId: v.optional(v.id("folders")),
+    order: v.optional(v.number()), // Optional for migration - will be backfilled
     visibility: v.union(v.literal("private"), v.literal("shared"), v.literal("public")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_owner", ["ownerId"])
-    .index("by_visibility", ["visibility"]),
+    .index("by_visibility", ["visibility"])
+    .index("by_folder", ["folderId"]),
 
   notePermissions: defineTable({
     noteId: v.id("notes"),

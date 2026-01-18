@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
+import ConfirmDialog from './ConfirmDialog'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface CommentData {
@@ -60,6 +61,7 @@ export default function GeneralComments({
   const [replyText, setReplyText] = useState('')
   const [editingId, setEditingId] = useState<Id<'comments'> | null>(null)
   const [editText, setEditText] = useState('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState<Id<'comments'> | null>(null)
 
   const handleCreate = async () => {
     if (!newComment.trim() || !currentUserId) return
@@ -111,11 +113,15 @@ export default function GeneralComments({
     }
   }
 
-  const handleDelete = async (commentId: Id<'comments'>) => {
-    if (!currentUserId) return
-    if (!confirm('Delete this comment?')) return
+  const handleDeleteClick = (commentId: Id<'comments'>) => {
+    setShowDeleteDialog(commentId)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!currentUserId || !showDeleteDialog) return
     try {
-      await deleteComment({ commentId, userId: currentUserId })
+      await deleteComment({ commentId: showDeleteDialog, userId: currentUserId })
+      setShowDeleteDialog(null)
     } catch (error) {
       console.error('Failed to delete:', error)
     }
@@ -156,7 +162,7 @@ export default function GeneralComments({
                 className={`btn btn-xs btn-circle ${comment.resolved ? 'btn-ghost' : 'btn-success'}`}
                 title={comment.resolved ? 'Unresolve' : 'Resolve'}
               >
-                {comment.resolved ? <X size={10} /> : <Check size={10} />}
+                {comment.resolved ? <X className="size-[1.2em]" strokeWidth={2.5} /> : <Check className="size-[1.2em]" strokeWidth={2.5} />}
               </button>
             )}
             {canEdit(comment) && (
@@ -168,16 +174,16 @@ export default function GeneralComments({
                 className="btn btn-xs btn-circle btn-ghost"
                 title="Edit"
               >
-                <Pencil size={10} />
+                <Pencil className="size-[1.2em]" strokeWidth={2.5} />
               </button>
             )}
             {canDelete(comment) && (
               <button
-                onClick={() => handleDelete(comment._id)}
+                onClick={() => handleDeleteClick(comment._id)}
                 className="btn btn-xs btn-circle btn-ghost text-error"
                 title="Delete"
               >
-                <Trash2 size={10} />
+                <Trash2 className="size-[1.2em]" strokeWidth={2.5} />
               </button>
             )}
           </div>
@@ -239,7 +245,7 @@ export default function GeneralComments({
               onClick={() => handleReply(comment._id)}
               className="btn btn-primary btn-sm btn-circle"
             >
-              <Send size={14} />
+              <Send className="size-[1.2em]" strokeWidth={2.5} />
             </button>
           </div>
         )}
@@ -313,7 +319,7 @@ export default function GeneralComments({
                     className="btn btn-primary btn-sm btn-circle"
                     disabled={!newComment.trim()}
                   >
-                    <Send size={14} />
+                    <Send className="size-[1.2em]" strokeWidth={2.5} />
                   </button>
                 </div>
               )}
@@ -321,6 +327,17 @@ export default function GeneralComments({
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showDeleteDialog !== null}
+        title="Delete Comment"
+        message="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonClass="btn-error"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteDialog(null)}
+      />
     </div>
   )
 }

@@ -1,0 +1,51 @@
+# Cursor AI Development Rules
+
+## Code Quality Checklist
+
+Before considering any feature or task complete, you MUST:
+
+1. **Run TypeScript Type Checking**
+   ```bash
+   pnpm typecheck
+   ```
+   - All TypeScript errors must be resolved
+   - No type errors should remain
+   - Fix type mismatches, missing properties, and incorrect type assertions
+
+2. **Run Linting**
+   ```bash
+   pnpm lint
+   ```
+   - All linting errors must be resolved
+   - Fix import order issues
+   - Remove unused imports and variables
+   - Fix array type syntax (use `Array<T>` instead of `T[]`)
+   - Fix any style warnings
+
+3. **Verify Build**
+   - Ensure the code compiles without errors
+   - Check that all imports resolve correctly
+   - Verify no runtime errors in the console
+
+## Code Standards
+
+- **Always use lucide-react icons** - Never use emojis (📁, 📄, etc.) in UI components
+- **No JavaScript prompts** - Use DaisyUI modals/dialogs instead of `alert()`, `confirm()`, or `prompt()`
+- **TypeScript strict mode** - All code must pass TypeScript strict type checking
+- **Import order** - Follow ESLint import order rules (external packages → internal libs → components)
+- **Array types** - Use `Array<T>` syntax instead of `T[]` per project linting rules
+
+## Before Marking Complete
+
+1. Run `pnpm typecheck` and ensure exit code 0
+2. Run `pnpm lint` and ensure exit code 0
+3. Verify the feature works in the browser
+4. Check for console errors
+5. Ensure all related files are properly saved
+
+## Error Handling
+
+- If typecheck fails, fix ALL errors before proceeding
+- If lint fails, fix ALL errors before proceeding
+- Do not leave TODO comments for fixing errors later
+- Do not use `as any` type assertions unless absolutely necessary and documented

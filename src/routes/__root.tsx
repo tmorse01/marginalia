@@ -5,6 +5,9 @@ import { ConvexProvider } from 'convex/react'
 import { useEffect } from 'react'
 
 import Header from '../components/Header'
+import Sidebar from '../components/Sidebar'
+import MainContent from '../components/MainContent'
+import { SidebarProvider } from '../lib/sidebar-context'
 import { convex } from '../lib/convex'
 
 import appCss from '../styles.css?url'
@@ -44,6 +47,30 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark'
     document.documentElement.setAttribute('data-theme', savedTheme)
+    
+    // Update favicon based on theme
+    const updateFavicon = () => {
+      const theme = document.documentElement.getAttribute('data-theme')
+      const favicon = theme === 'light' ? '/favicon-light.svg' : '/favicon-dark.svg'
+      const link = document.querySelector<HTMLLinkElement>("link[rel='icon']")
+      if (link) {
+        link.href = favicon
+      }
+    }
+    
+    updateFavicon()
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(() => {
+      updateFavicon()
+    })
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    })
+    
+    return () => observer.disconnect()
   }, [])
 
   return (
@@ -51,12 +78,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="bg-base-100 text-base-content">
+      <body className="bg-base-200 text-base-content">
         <ConvexProvider client={convex}>
-          <Header />
-          <main className="container mx-auto px-4 py-8">
-            {children}
-          </main>
+          <SidebarProvider>
+            <Header />
+            <div className="flex relative min-h-screen">
+              <Sidebar />
+              <MainContent>{children}</MainContent>
+            </div>
+          </SidebarProvider>
           <TanStackDevtools
             config={{
               position: 'bottom-right',

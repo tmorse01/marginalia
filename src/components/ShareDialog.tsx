@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Check, Copy, Share2, UserPlus, X } from 'lucide-react'
+import AlertToast from './AlertToast'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface ShareDialogProps {
@@ -24,6 +25,8 @@ export default function ShareDialog({
   const [role, setRole] = useState<'editor' | 'viewer'>('editor')
   const [isGranting, setIsGranting] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState('')
 
   const publicUrl = note?.visibility === 'public'
     ? `${window.location.origin}/public/${noteId}`
@@ -36,15 +39,17 @@ export default function ShareDialog({
     try {
       // TODO: Get user ID from email lookup
       // For now, this is a placeholder
-      alert('User lookup by email not yet implemented')
+      setAlertMessage('User lookup by email not yet implemented')
+      setShowAlert(true)
       setEmail('')
     } catch (error) {
       console.error('Failed to grant permission:', error)
-      alert(
+      setAlertMessage(
         error instanceof Error
           ? `Failed to grant permission: ${error.message}`
           : 'Failed to grant permission. Please try again.'
       )
+      setShowAlert(true)
     } finally {
       setIsGranting(false)
     }
@@ -79,7 +84,7 @@ export default function ShareDialog({
               Share Note
             </h3>
             <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
-              <X size={20} />
+              <X className="size-[1.2em]" strokeWidth={2.5} />
             </button>
           </div>
 
@@ -217,6 +222,13 @@ export default function ShareDialog({
           </div>
         </div>
       </div>
+
+      <AlertToast
+        isOpen={showAlert}
+        message={alertMessage}
+        type="info"
+        onClose={() => setShowAlert(false)}
+      />
     </div>
   )
 }

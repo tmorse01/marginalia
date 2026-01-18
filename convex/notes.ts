@@ -6,13 +6,26 @@ export const create = mutation({
     title: v.string(),
     content: v.string(),
     ownerId: v.id("users"),
+    folderId: v.optional(v.id("folders")),
   },
   handler: async (ctx, args) => {
+    // Get max order for siblings in the same folder
+    const siblings = await ctx.db
+      .query("notes")
+      .withIndex("by_folder", (q) => q.eq("folderId", args.folderId ?? undefined))
+      .collect();
+
+    const maxOrder = siblings.length > 0
+      ? Math.max(...siblings.map((n) => n.order ?? 0))
+      : -1;
+
     const now = Date.now();
     const noteId = await ctx.db.insert("notes", {
       title: args.title,
       content: args.content,
       ownerId: args.ownerId,
+      folderId: args.folderId,
+      order: maxOrder + 1,
       visibility: "private",
       createdAt: now,
       updatedAt: now,
@@ -102,7 +115,28 @@ export const listUserNotes = query({
       new Map(allNotes.map((n) => [n._id, n])).values()
     );
 
-    return uniqueNotes.sort((a, b) => b.updatedAt - a.updatedAt);
+    // Backfill order for notes that don't have it (migration)
+    const notesWithOrder = uniqueNotes.map((note, index) => {
+      if (note.order === undefined) {
+        // Assign order based on current position (will be saved on next update)
+        return { ...note, order: index };
+      }
+      return note;
+    });
+
+    // Sort by folder order, then by updatedAt
+    return notesWithOrder.sort((a, b) => {
+      // First sort by order if in same folder
+      if (a.folderId === b.folderId) {
+        const orderA = a.order ?? 0;
+        const orderB = b.order ?? 0;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+      }
+      // Then by updatedAt
+      return b.updatedAt - a.updatedAt;
+    });
   },
 });
 
@@ -152,6 +186,100 @@ export const getPublic = query({
       return note;
     }
     return null;
+  },
+});
+
+export const moveToFolder = mutation({
+  args: {
+    noteId: v.id("notes"),
+    folderId: v.optional(v.id("folders")),
+  },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.noteId);
+    if (!note) return;
+
+    // Get max order in new folder
+    const siblings = await ctx.db
+      .query("notes")
+      .withIndex("by_folder", (q) => q.eq("folderId", args.folderId ?? undefined))
+      .collect();
+
+    const maxOrder = siblings.length > 0
+      ? Math.max(...siblings.map((n) => n.order ?? 0))
+      : -1;
+
+    await ctx.db.patch(args.noteId, {
+      folderId: args.folderId,
+      order: maxOrder + 1,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const reorder = mutation({
+  args: {
+    noteId: v.id("notes"),
+    newOrder: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.noteId);
+    if (!note) return;
+
+    const siblings = await ctx.db
+      .query("notes")
+      .withIndex("by_folder", (q) => q.eq("folderId", note.folderId ?? undefined))
+      .collect();
+
+    const sorted = siblings.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const oldIndex = sorted.findIndex((n) => n._id === args.noteId);
+    
+    if (oldIndex === -1) return;
+
+    sorted.splice(oldIndex, 1);
+    sorted.splice(args.newOrder, 0, note);
+
+    // Update all affected notes
+    for (let i = 0; i < sorted.length; i++) {
+      const currentOrder = sorted[i].order ?? 0;
+      if (currentOrder !== i) {
+        await ctx.db.patch(sorted[i]._id, {
+          order: i,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+  },
+});
+
+export const duplicate = mutation({
+  args: {
+    noteId: v.id("notes"),
+    ownerId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const original = await ctx.db.get(args.noteId);
+    if (!original) return null;
+
+    const now = Date.now();
+    const newNoteId = await ctx.db.insert("notes", {
+      title: `${original.title} (Copy)`,
+      content: original.content,
+      ownerId: args.ownerId,
+      folderId: original.folderId,
+      order: (original.order ?? 0) + 1, // Place right after original
+      visibility: "private",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Create owner permission
+    await ctx.db.insert("notePermissions", {
+      noteId: newNoteId,
+      userId: args.ownerId,
+      role: "owner",
+    });
+
+    return newNoteId;
   },
 });
 
