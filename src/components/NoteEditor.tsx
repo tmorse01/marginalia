@@ -16,7 +16,7 @@ export default function NoteEditor({
   onChange,
   placeholder = 'Start writing...',
   className = '',
-  showInlinePreview = false,
+  showInlinePreview = true,
   onCursorChange,
 }: NoteEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -26,17 +26,21 @@ export default function NoteEditor({
   const [editorHeight, setEditorHeight] = useState<number | undefined>(undefined)
 
   const lines = getLines(content)
+  const isContentEmpty = lines.length === 0 || (lines.length === 1 && lines[0] === '')
 
-  // Auto-resize textarea
+  // Auto-resize textarea (inline preview uses container height)
   useEffect(() => {
     const textarea = textareaRef.current
-    if (textarea) {
-      textarea.style.height = 'auto'
-      const nextHeight = Math.max(textarea.scrollHeight, 400)
-      textarea.style.height = `${nextHeight}px`
+    if (!textarea) return
+
+    textarea.style.height = 'auto'
+    const nextHeight = Math.max(textarea.scrollHeight, 400)
+    textarea.style.height = `${nextHeight}px`
+
+    if (showInlinePreview) {
       setEditorHeight(nextHeight)
     }
-  }, [content])
+  }, [content, showInlinePreview])
 
   // Sync scroll between textarea and visible lines
   const handleScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
@@ -124,14 +128,6 @@ export default function NoteEditor({
 
   if (!showInlinePreview) {
     // Simple, reliable textarea mode
-    useEffect(() => {
-      const textarea = textareaRef.current
-      if (textarea) {
-        textarea.style.height = 'auto'
-        textarea.style.height = `${Math.max(textarea.scrollHeight, 400)}px`
-      }
-    }, [content])
-
     return (
       <textarea
         ref={textareaRef}
@@ -179,7 +175,7 @@ export default function NoteEditor({
         }}
       >
         <div className="editor-lines-container">
-          {lines.length === 0 ? (
+          {isContentEmpty ? (
             <div className="editor-line editor-line-empty text-base-content/50 pointer-events-auto">
               {placeholder}
             </div>

@@ -6,7 +6,7 @@ import { Edit, Eye, Share2 } from 'lucide-react'
 import NoteEditor from '../../components/NoteEditor'
 import CommentableContent from '../../components/CommentableContent'
 import PresenceIndicator from '../../components/PresenceIndicator'
-import CommentThread from '../../components/CommentThread'
+import GeneralComments from '../../components/GeneralComments'
 import ShareDialog from '../../components/ShareDialog'
 import ActivityLog from '../../components/ActivityLog'
 import LiveCursorOverlay from '../../components/LiveCursorOverlay'
@@ -24,7 +24,7 @@ function NotePage() {
   const updateNote = useMutation(api.notes.update)
   const currentUserId = useCurrentUser()
   const activeUsers = useQuery(api.presence.getActiveUsers, { noteId: noteId as any })
-  const commentCounts = useQuery(api.comments.getUnresolvedCounts, { noteId: noteId as any })
+  const allComments = useQuery(api.comments.listByNote, { noteId: noteId as any })
   
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState('')
@@ -32,12 +32,10 @@ function NotePage() {
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [cursorStart, setCursorStart] = useState<number | undefined>(undefined)
   const [cursorEnd, setCursorEnd] = useState<number | undefined>(undefined)
-  
-  // Pending comment state (from hover-to-comment)
-  const [pendingCommentLine, setPendingCommentLine] = useState<{
-    lineNumber: number
-    lineContent: string
-  } | null>(null)
+
+  // Extract line comments and general comments from API response
+  const lineComments = allComments?.byLine ?? {}
+  const generalComments = allComments?.general ?? []
 
   // Update local state when note loads
   useEffect(() => {
@@ -79,18 +77,6 @@ function NotePage() {
     cursorStart: isEditing ? cursorStart : undefined,
     cursorEnd: isEditing ? cursorEnd : undefined,
   })
-
-  // Handle hover-to-comment
-  const handleCommentLine = (lineNumber: number, lineContent: string) => {
-    setPendingCommentLine({ lineNumber, lineContent })
-    // Scroll to comment section
-    setTimeout(() => {
-      document.getElementById('comments-section')?.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      })
-    }, 100)
-  }
 
   if (note === undefined) {
     return (
@@ -194,8 +180,10 @@ function NotePage() {
                 />
                 <CommentableContent
                   content={content}
-                  onCommentLine={handleCommentLine}
-                  commentCountsByLine={commentCounts ?? {}}
+                  noteId={noteId as any}
+                  commentsByLine={lineComments}
+                  currentUserId={currentUserId}
+                  noteOwnerId={note.ownerId}
                 />
               </>
             )}
@@ -203,13 +191,11 @@ function NotePage() {
 
           {!isEditing && (
             <div id="comments-section" className="mt-6">
-              <CommentThread
+              <GeneralComments
                 noteId={noteId as any}
-                noteContent={content}
+                threads={generalComments}
                 currentUserId={currentUserId}
                 noteOwnerId={note.ownerId}
-                pendingCommentLine={pendingCommentLine}
-                onCancelPendingComment={() => setPendingCommentLine(null)}
               />
               <ActivityLog noteId={noteId as any} />
             </div>

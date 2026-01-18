@@ -20,8 +20,8 @@ describe('offsetToLineCol', () => {
     expect(offsetToLineCol(content, 0)).toEqual({ line: 0, col: 0 })
     expect(offsetToLineCol(content, 5)).toEqual({ line: 0, col: 5 })
     expect(offsetToLineCol(content, 6)).toEqual({ line: 1, col: 0 })
-    expect(offsetToLineCol(content, 12)).toEqual({ line: 1, col: 6 })
-    expect(offsetToLineCol(content, 13)).toEqual({ line: 2, col: 0 })
+    expect(offsetToLineCol(content, 12)).toEqual({ line: 2, col: 0 })
+    expect(offsetToLineCol(content, 13)).toEqual({ line: 2, col: 1 })
   })
 
   it('clamps out-of-bounds offsets', () => {
@@ -54,8 +54,8 @@ describe('lineColToOffset', () => {
     expect(lineColToOffset(content, 0, 0)).toBe(0)
     expect(lineColToOffset(content, 0, 5)).toBe(5)
     expect(lineColToOffset(content, 1, 0)).toBe(6)
-    expect(lineColToOffset(content, 1, 6)).toBe(12)
-    expect(lineColToOffset(content, 2, 0)).toBe(13)
+    expect(lineColToOffset(content, 1, 6)).toBe(11)
+    expect(lineColToOffset(content, 2, 0)).toBe(12)
   })
 
   it('clamps out-of-bounds coordinates', () => {
@@ -77,7 +77,7 @@ describe('getLineNumber', () => {
     expect(getLineNumber(content, 0)).toBe(0)
     expect(getLineNumber(content, 5)).toBe(0)
     expect(getLineNumber(content, 6)).toBe(1)
-    expect(getLineNumber(content, 12)).toBe(1)
+    expect(getLineNumber(content, 12)).toBe(2)
     expect(getLineNumber(content, 13)).toBe(2)
   })
 })
@@ -87,7 +87,7 @@ describe('getLineStart', () => {
     const content = 'line1\nline2\nline3'
     expect(getLineStart(content, 0)).toBe(0)
     expect(getLineStart(content, 1)).toBe(6)
-    expect(getLineStart(content, 2)).toBe(13)
+    expect(getLineStart(content, 2)).toBe(12)
   })
 
   it('handles out-of-bounds line numbers', () => {
@@ -101,8 +101,8 @@ describe('getLineEnd', () => {
   it('returns end offset of line including newline', () => {
     const content = 'line1\nline2\nline3'
     expect(getLineEnd(content, 0)).toBe(5)
-    expect(getLineEnd(content, 1)).toBe(12)
-    expect(getLineEnd(content, 2)).toBe(18)
+    expect(getLineEnd(content, 1)).toBe(11)
+    expect(getLineEnd(content, 2)).toBe(17)
   })
 
   it('handles last line without newline', () => {

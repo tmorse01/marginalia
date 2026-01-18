@@ -39,15 +39,15 @@ async function checkNoteAccess(
 
 /**
  * Create a new comment on a specific line or as a general comment
- * Pass lineNumber = -1 for general comments not tied to a specific line
+ * Omit lineNumber and lineContent for general comments not tied to a specific line
  */
 export const create = mutation({
   args: {
     noteId: v.id("notes"),
     authorId: v.id("users"),
     body: v.string(),
-    lineNumber: v.number(), // -1 for general comments
-    lineContent: v.string(), // empty string for general comments
+    lineNumber: v.optional(v.number()), // undefined for general comments
+    lineContent: v.optional(v.string()), // undefined for general comments
   },
   handler: async (ctx, args) => {
     // Validate body is not empty
@@ -62,8 +62,8 @@ export const create = mutation({
     }
 
     // Validate line number is within bounds (unless it's a general comment)
-    const isGeneralComment = args.lineNumber === -1;
-    if (!isGeneralComment) {
+    const isGeneralComment = args.lineNumber === undefined;
+    if (!isGeneralComment && args.lineNumber !== undefined) {
       const lines = note.content.split("\n");
       if (args.lineNumber < 0 || args.lineNumber >= lines.length) {
         throw new Error("Invalid line number");
@@ -99,8 +99,9 @@ export const create = mutation({
 
 /**
  * Get the effective line number for a comment (handles legacy comments)
+ * Returns undefined for general comments (no line association)
  */
-function getEffectiveLineNumber(comment: any, noteContent: string): number {
+function getEffectiveLineNumber(comment: any, noteContent: string): number | undefined {
   // New-style comment with lineNumber
   if (comment.lineNumber !== undefined) {
     return comment.lineNumber;
@@ -119,13 +120,15 @@ function getEffectiveLineNumber(comment: any, noteContent: string): number {
     return 0;
   }
   
-  return 0;
+  // General comment - no line association
+  return undefined;
 }
 
 /**
  * Get the effective line content for a comment (handles legacy comments)
+ * Returns undefined for general comments (no line association)
  */
-function getEffectiveLineContent(comment: any, noteContent: string): string {
+function getEffectiveLineContent(comment: any, noteContent: string): string | undefined {
   // New-style comment with lineContent
   if (comment.lineContent !== undefined) {
     return comment.lineContent;
@@ -138,6 +141,9 @@ function getEffectiveLineContent(comment: any, noteContent: string): string {
   
   // Fallback: get line content from computed line number
   const lineNum = getEffectiveLineNumber(comment, noteContent);
+  if (lineNum === undefined) {
+    return undefined; // General comment
+  }
   const lines = noteContent.split("\n");
   return lines[lineNum] || "";
 }
@@ -371,22 +377,36 @@ export const listByNote = query({
         .sort((a, b) => a.createdAt - b.createdAt),
     }));
 
-    // Group by line number using reduce
-    const byLine = threads.reduce<Record<number, typeof threads>>((acc, thread) => {
-      const line = thread.lineNumber as number; // Always a number after enrichment
-      if (!(line in acc)) {
-        acc[line] = [];
-      }
-      acc[line].push(thread);
-      return acc;
-    }, {});
+    // Separate general comments (no lineNumber) from line-specific comments
+    const generalComments = threads.filter(
+      (t) => t.lineNumber === undefined || t.lineNumber === null
+    );
+    const lineComments = threads.filter(
+      (t) => t.lineNumber !== undefined && t.lineNumber !== null
+    );
+
+    // Group line comments by line number
+    const byLine = lineComments.reduce<Record<number, typeof threads>>(
+      (acc, thread) => {
+        const line = thread.lineNumber as number;
+        if (!(line in acc)) {
+          acc[line] = [];
+        }
+        acc[line].push(thread);
+        return acc;
+      },
+      {}
+    );
 
     // Sort threads within each line by creation time
     Object.keys(byLine).forEach((lineKey) => {
       byLine[Number(lineKey)].sort((a, b) => a.createdAt - b.createdAt);
     });
 
-    return byLine;
+    // Sort general comments by creation time
+    generalComments.sort((a, b) => a.createdAt - b.createdAt);
+
+    return { byLine, general: generalComments };
   },
 });
 
@@ -516,10 +536,13 @@ export const getUnresolvedCounts = query({
     const topLevel = comments.filter((c) => !c.parentId);
 
     // Count by line (using effective line number for legacy comments)
+    // Skip general comments (no line number)
     const counts: Record<number, number> = {};
     for (const comment of topLevel) {
       const lineNum = getEffectiveLineNumber(comment, noteContent);
-      counts[lineNum] = (counts[lineNum] || 0) + 1;
+      if (lineNum !== undefined) {
+        counts[lineNum] = (counts[lineNum] || 0) + 1;
+      }
     }
 
     return counts;

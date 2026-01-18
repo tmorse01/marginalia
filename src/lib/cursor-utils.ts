@@ -10,36 +10,28 @@ export interface LineCol {
 /**
  * Convert a character offset to line and column coordinates
  * Lines are 0-indexed, columns are 0-indexed
- * Newline characters are included in the column count of the line they terminate
- * The first character after a newline is considered col = lineLength + 1 of the previous line
+ * Newline characters are counted as the last column of their line
+ * The first character after a newline starts the next line at col = 0
  */
 export function offsetToLineCol(content: string, offset: number): LineCol {
   const clamped = Math.max(0, Math.min(content.length, offset))
-  
+
   const lines = content.split('\n')
   let currentOffset = 0
-  
+
   for (let i = 0; i < lines.length; i++) {
     const lineLength = lines[i].length
     const lineStart = currentOffset
-    const newlinePos = i < lines.length - 1 ? lineStart + lineLength : null
-    const lineEndAfterNewline = newlinePos !== null ? newlinePos + 1 : lineStart + lineLength
-    
+
     if (clamped <= lineStart + lineLength) {
-      // Within the line content (including newline position for non-last lines)
+      // Within the line content (newline is at col = lineLength for non-last lines)
       return { line: i, col: clamped - lineStart }
-    } else if (newlinePos !== null && clamped === lineEndAfterNewline) {
-      // First character after newline is col = lineLength + 1 of current line
-      return { line: i, col: lineLength + 1 }
-    } else if (clamped > lineEndAfterNewline) {
-      // Move to next line
-      currentOffset = lineEndAfterNewline
-      continue
     }
-    
-    currentOffset = lineEndAfterNewline
+
+    // Move to next line (skip newline)
+    currentOffset = lineStart + lineLength + 1
   }
-  
+
   // Fallback: should not reach here
   return { line: lines.length - 1, col: lines[lines.length - 1].length }
 }
@@ -47,11 +39,17 @@ export function offsetToLineCol(content: string, offset: number): LineCol {
 /**
  * Convert line and column coordinates to a character offset
  * Lines and columns are 0-indexed
- * Column can include the newline character (col = lineLength includes the newline)
+ * Column is clamped to the line length (newline is at col = lineLength for non-last lines)
  */
 export function lineColToOffset(content: string, line: number, col: number): number {
   const lines = content.split('\n')
-  const clampedLine = Math.max(0, Math.min(lines.length - 1, line))
+  if (line < 0) {
+    return 0
+  }
+  if (line >= lines.length) {
+    return content.length
+  }
+  const clampedLine = line
 
   let offset = 0
   for (let i = 0; i < clampedLine; i++) {
@@ -59,9 +57,7 @@ export function lineColToOffset(content: string, line: number, col: number): num
   }
 
   const lineLength = lines[clampedLine]?.length ?? 0
-  // Allow col to be lineLength + 1 to include the newline, but clamp to actual content
-  const maxCol = clampedLine < lines.length - 1 ? lineLength + 1 : lineLength
-  const clampedCol = Math.max(0, Math.min(maxCol, col))
+  const clampedCol = Math.max(0, Math.min(lineLength, col))
   offset += clampedCol
 
   return Math.min(offset, content.length)
@@ -91,7 +87,6 @@ export function getLineStart(content: string, line: number): number {
 /**
  * Get the end offset of a line (including newline if present)
  * Returns the position of the newline character for non-last lines, or end of content for last line
- * For non-last lines, this is the position that when used in offsetToLineCol gives col = lineLength + 1
  */
 export function getLineEnd(content: string, line: number): number {
   const lines = content.split('\n')
@@ -105,13 +100,7 @@ export function getLineEnd(content: string, line: number): number {
   }
   offset += lines[line].length
 
-  // For non-last lines, return position after newline (which is col = lineLength + 1)
-  // For last line, return end of content
-  if (line < lines.length - 1) {
-    // Return position after newline (first char of next line)
-    return offset + 1
-  }
-  
+  // For non-last lines, return position of newline; for last line, end of content
   return offset
 }
 

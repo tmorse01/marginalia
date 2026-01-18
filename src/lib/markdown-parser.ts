@@ -40,6 +40,12 @@ export function parseInlineMarkdown(text: string): Token[] {
   const len = text.length
 
   while (i < len) {
+    // Treat escaped markers as literal text
+    if (text[i] === '\\' && i + 1 < len) {
+      i += 2
+      continue
+    }
+
     // Try to match inline elements in priority order
     // 1. Code (backticks) - highest priority, no nesting
     const codeMatch = matchCode(text, i)
@@ -349,10 +355,20 @@ function matchBold(text: string, start: number): { start: number; end: number; c
   if (text[start] === '*' && text[start + 1] === '*') {
     let i = start + 2
     while (i < text.length - 1) {
-      if (text[i] === '*' && text[i + 1] === '*') {
-        const content = text.slice(start + 2, i)
-        const raw = text.slice(start, i + 2)
-        return { start, end: i + 2, content, raw }
+      if (text[i] === '*') {
+        let runLength = 1
+        while (i + runLength < text.length && text[i + runLength] === '*') {
+          runLength++
+        }
+        if (runLength >= 2) {
+          const closingStart =
+            runLength % 2 === 1 && runLength >= 3 ? i + runLength - 2 : i
+          const content = text.slice(start + 2, closingStart)
+          const raw = text.slice(start, closingStart + 2)
+          return { start, end: closingStart + 2, content, raw }
+        }
+        i += runLength
+        continue
       }
       i++
     }

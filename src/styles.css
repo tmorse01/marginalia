@@ -208,51 +208,103 @@ code {
 
 /* Commentable Content - Hover to comment on lines */
 .commentable-content {
-  @apply relative;
+  @apply relative pr-10; /* Space for the right indicator */
 }
 
 .commentable-line {
-  @apply flex items-start relative;
+  @apply relative py-0.5 pr-8 rounded-sm transition-colors flex items-start;
   min-height: 1.5em;
 }
 
 .commentable-line:hover {
-  @apply bg-base-200/50;
+  @apply bg-base-200/30;
 }
 
-.commentable-line-gutter {
-  @apply flex-shrink-0 w-8 flex items-center justify-center;
-  min-height: inherit;
+.commentable-line.has-comments {
+  @apply bg-warning/5;
+}
+
+.commentable-line.is-active {
+  @apply bg-primary/10;
 }
 
 .commentable-line-content {
-  @apply flex-1 py-0.5;
+  @apply flex-1 min-w-0;
 }
 
-.commentable-line-content.has-comments {
-  @apply bg-primary/10 border-l-2 border-primary pl-2;
-}
-
-/* Comment indicator badge (shows count) */
+/* Right-side comment indicator */
 .comment-indicator {
-  @apply w-5 h-5 rounded-full bg-primary text-primary-content 
-         text-xs font-bold flex items-center justify-center 
-         cursor-pointer hover:bg-primary/80 transition-colors;
+  @apply absolute right-0 top-1/2 -translate-y-1/2
+         w-6 h-6 rounded-full flex items-center justify-center
+         text-base-content/40
+         cursor-pointer transition-all duration-150
+         opacity-0 hover:opacity-100;
 }
 
-/* Add comment button (appears on hover) */
-.comment-add-btn {
-  @apply w-6 h-6 rounded flex items-center justify-center
-         text-base-content/40 hover:text-primary hover:bg-primary/10
-         cursor-pointer transition-all opacity-0;
+.comment-indicator:hover {
+  @apply text-primary bg-primary/10;
 }
 
-.comment-add-btn.visible {
+.comment-indicator.visible {
   @apply opacity-100;
 }
 
-.commentable-line:hover .comment-add-btn {
-  @apply opacity-100;
+.comment-indicator.has-comments {
+  @apply opacity-100 bg-warning text-warning-content;
+}
+
+.comment-indicator.has-comments:hover {
+  @apply bg-warning/80;
+}
+
+.comment-indicator.is-open {
+  @apply bg-primary text-primary-content opacity-100;
+}
+
+.comment-indicator .comment-count {
+  @apply text-xs font-bold;
+}
+
+/* Comment Popover - Desktop (right side) */
+.comment-popover {
+  @apply bg-base-100 rounded-lg shadow-xl border border-base-300 overflow-hidden;
+  width: 320px;
+  max-width: calc(100vw - 2rem);
+}
+
+.comment-popover-right {
+  @apply absolute z-50;
+  top: 50%;
+  left: calc(100% + 0.75rem);
+  transform: translateY(-50%);
+}
+
+/* Adjust if popover would go off screen */
+@media (max-width: 1024px) {
+  .comment-popover-right {
+    left: auto;
+    right: 0;
+    transform: translateY(-50%) translateX(100%);
+  }
+}
+
+/* Comment Popover - Mobile (bottom sheet) */
+.comment-popover-bottom {
+  @apply rounded-t-2xl rounded-b-none w-full max-h-[70vh];
+}
+
+/* Slide up animation for mobile */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out;
 }
 
 /* Inline markdown rendering for single lines */
