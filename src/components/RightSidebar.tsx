@@ -77,9 +77,9 @@ export default function RightSidebar({
   }, [selectedLine, activeTab, setActiveTab])
 
   return (
-    <aside className="w-full h-full bg-base-200 border border-base-300 rounded-lg flex flex-col">
+    <aside className="w-full bg-base-200 border border-base-300 rounded-lg flex flex-col">
       {/* Content */}
-      <div className="flex-1 overflow-y-auto flex flex-col min-h-[400px] max-h-[80vh]">
+      <div className="flex-1 flex flex-col">
         {activeTab === 'comments' && (
           <InlineCommentsPanel
             noteId={noteId}

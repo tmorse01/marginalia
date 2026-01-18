@@ -12,7 +12,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="navbar bg-base-300 shadow-lg">
+      <header className="navbar bg-base-300 shadow-lg fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center gap-2">
           <button
             onClick={toggleCollapse}

@@ -25,7 +25,7 @@ export default function AIChatPanel({ noteId: _noteId }: AIChatPanelProps) {
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!inputValue.trim() || isLoading) return
 
     const userMessage: Message = {

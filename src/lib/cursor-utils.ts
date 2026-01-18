@@ -166,3 +166,130 @@ export function clickPositionToColumn(
   return Math.max(0, Math.floor(x / charWidth))
 }
 
+/**
+ * Map cursor position in rendered content to raw markdown offset
+ * Accounts for syntax markers when line is focused
+ */
+export function renderedToRawOffset(
+  line: string,
+  renderedOffset: number,
+  isFocused: boolean
+): number {
+  // For now, this is a simplified version
+  // The full implementation will be in editor-content-utils.ts
+  // This function is kept here for API compatibility
+  if (!isFocused) {
+    return renderedOffset
+  }
+  
+  // Account for line type prefix
+  const trimmed = line.trim()
+  let prefixLength = 0
+  
+  if (trimmed.startsWith('#')) {
+    const match = trimmed.match(/^(#{1,6})\s+/)
+    if (match) {
+      prefixLength = match[0].length
+    }
+  } else if (/^[-*+]\s+/.test(trimmed)) {
+    prefixLength = 2
+  } else if (/^\d+\.\s+/.test(trimmed)) {
+    const match = trimmed.match(/^(\d+)\.\s+/)
+    if (match) {
+      prefixLength = match[0].length
+    }
+  } else if (trimmed.startsWith('>')) {
+    const match = line.match(/^(>+)\s*/)
+    if (match) {
+      prefixLength = match[0].length
+    }
+  }
+  
+  if (renderedOffset < prefixLength) {
+    return 0
+  }
+  
+  return renderedOffset - prefixLength + (line.length - trimmed.length)
+}
+
+/**
+ * Map raw markdown offset to rendered DOM position
+ * Accounts for syntax markers when line is focused
+ */
+export function rawToRenderedOffset(
+  line: string,
+  rawOffset: number,
+  isFocused: boolean
+): number {
+  if (!isFocused) {
+    return rawOffset
+  }
+  
+  // Account for line type prefix
+  const trimmed = line.trim()
+  let prefixLength = 0
+  
+  if (trimmed.startsWith('#')) {
+    const match = trimmed.match(/^(#{1,6})\s+/)
+    if (match) {
+      prefixLength = match[0].length
+    }
+  } else if (/^[-*+]\s+/.test(trimmed)) {
+    prefixLength = 2
+  } else if (/^\d+\.\s+/.test(trimmed)) {
+    const match = trimmed.match(/^(\d+)\.\s+/)
+    if (match) {
+      prefixLength = match[0].length
+    }
+  } else if (trimmed.startsWith('>')) {
+    const match = line.match(/^(>+)\s*/)
+    if (match) {
+      prefixLength = match[0].length
+    }
+  }
+  
+  const leadingWhitespace = line.length - trimmed.length
+  const rawOffsetInTrimmed = rawOffset - leadingWhitespace
+  
+  if (rawOffsetInTrimmed < 0) {
+    return rawOffset
+  }
+  
+  return rawOffsetInTrimmed + prefixLength
+}
+
+/**
+ * Find which token contains a given offset
+ * Returns the token and the offset within that token
+ */
+export function getTokenAtOffset(
+  tokens: Array<{ type: string; content: string; raw?: string }>,
+  offset: number
+): { token: { type: string; content: string; raw?: string }; offsetInToken: number } | null {
+  let currentOffset = 0
+  
+  for (const token of tokens) {
+    const tokenLength = token.raw?.length || token.content.length
+    
+    if (offset < currentOffset + tokenLength) {
+      return {
+        token,
+        offsetInToken: offset - currentOffset,
+      }
+    }
+    
+    currentOffset += tokenLength
+  }
+  
+  // Offset is beyond all tokens, return last token
+  if (tokens.length > 0) {
+    const lastToken = tokens[tokens.length - 1]
+    return {
+      token: lastToken,
+      offsetInToken: lastToken.content.length,
+    }
+  }
+  
+  return null
+}
+

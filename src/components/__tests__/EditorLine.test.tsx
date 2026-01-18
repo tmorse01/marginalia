@@ -5,12 +5,14 @@ import EditorLine from '../EditorLine'
 describe('EditorLine', () => {
   it('renders raw markdown when focused', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     render(
       <EditorLine
         line="**bold**"
         lineIndex={0}
         isFocused={true}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     expect(screen.getByText('**bold**')).toBeInTheDocument()
@@ -18,12 +20,14 @@ describe('EditorLine', () => {
 
   it('renders formatted markdown when unfocused', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="**bold**"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const boldElement = container.querySelector('.editor-bold')
@@ -34,12 +38,14 @@ describe('EditorLine', () => {
 
   it('renders headers with correct size when unfocused', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="# Header 1"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const header = container.querySelector('h1.editor-header.editor-header-1')
@@ -49,12 +55,14 @@ describe('EditorLine', () => {
 
   it('renders links as clickable when unfocused', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="[link text](https://example.com)"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const link = container.querySelector('.editor-link')
@@ -65,12 +73,14 @@ describe('EditorLine', () => {
 
   it('calls onFocus when clicked', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="test line"
         lineIndex={5}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const lineElement = container.querySelector('.editor-line')
@@ -83,12 +93,14 @@ describe('EditorLine', () => {
 
   it('preserves whitespace and indentation', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="    indented text"
         lineIndex={0}
         isFocused={true}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const lineElement = container.querySelector('.editor-line')
@@ -97,12 +109,14 @@ describe('EditorLine', () => {
 
   it('renders italic text when unfocused', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="*italic*"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const italicElement = container.querySelector('.editor-italic')
@@ -112,12 +126,14 @@ describe('EditorLine', () => {
 
   it('renders inline code when unfocused', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="`code`"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const codeElement = container.querySelector('.editor-inline-code')
@@ -127,12 +143,14 @@ describe('EditorLine', () => {
 
   it('renders strikethrough when unfocused', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="~~strikethrough~~"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const delElement = container.querySelector('.editor-strikethrough')
@@ -142,12 +160,14 @@ describe('EditorLine', () => {
 
   it('renders list items correctly', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="- list item"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const listItem = container.querySelector('.editor-list-item')
@@ -158,12 +178,14 @@ describe('EditorLine', () => {
 
   it('renders blockquotes correctly', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="> quote"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const blockquote = container.querySelector('.editor-blockquote')
@@ -172,12 +194,14 @@ describe('EditorLine', () => {
 
   it('renders empty lines', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line=""
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const emptyLine = container.querySelector('.editor-line-empty')
@@ -186,12 +210,14 @@ describe('EditorLine', () => {
 
   it('renders code fences as raw', () => {
     const onFocus = vi.fn()
+    const onChange = vi.fn()
     const { container } = render(
       <EditorLine
         line="```javascript"
         lineIndex={0}
         isFocused={false}
         onFocus={onFocus}
+        onChange={onChange}
       />
     )
     const codeFence = container.querySelector('.editor-line-code-fence')

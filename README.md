@@ -46,6 +46,7 @@ A real-time collaborative Markdown notes application built with TanStack Start, 
 4. Configure environment variables:
    - Copy `.env.example` to `.env`
    - Add your Convex URL from the Convex dashboard
+   - (Optional) Enable inline editor: `VITE_ENABLE_INLINE_EDITOR=true`
 
 5. Start the development server:
    ```bash
@@ -181,11 +182,54 @@ This will:
 - Simulate the Netlify build environment
 - Test SSR and routing locally
 
+## Feature Flags
+
+### Inline Editor
+
+Controls whether to use the advanced Obsidian-style inline markdown editor or a basic textarea.
+
+- **Default**: `false` (uses basic textarea)
+- **When enabled**: Uses the inline editor with syntax markers (e.g., `# ` for headers) visible when editing
+- **Status**: The inline editor is in active development and may have cursor positioning issues. The basic textarea is recommended for production use.
+
+#### Option 1: Build-Time Flag (Environment Variable)
+
+Set in your `.env` file or Netlify environment variables:
+```
+VITE_ENABLE_INLINE_EDITOR=true
+```
+
+**Pros:** Simple, works immediately  
+**Cons:** Requires rebuild to change
+
+#### Option 2: Runtime Flag (Convex Database) - Recommended
+
+Toggle at runtime without rebuilds:
+
+1. Run `npx convex dev` to generate API types
+2. In Convex dashboard, go to `featureFlags` table
+3. Insert a document:
+   ```json
+   {
+     "key": "inline_editor",
+     "value": false,
+     "description": "Enable inline markdown editor",
+     "updatedAt": 1234567890
+   }
+   ```
+4. Toggle the `value` field anytime - changes take effect immediately!
+
+**Pros:** No rebuild needed, can toggle instantly  
+**Cons:** Requires Convex setup
+
+See [docs/feature-flags.md](docs/feature-flags.md) for detailed documentation.
+
 ## Notes
 
 - Authentication is currently a placeholder - implement proper Convex Auth setup
 - User ID handling needs to be connected to actual authentication
 - Presence tracking uses a simplified approach - can be enhanced with Convex's built-in presence API
+- The inline markdown editor is feature-flagged and under active development
 
 ## License
 

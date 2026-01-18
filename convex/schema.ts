@@ -99,5 +99,14 @@ export default defineSchema({
   })
     .index("by_note", ["noteId"])
     .index("by_note_and_user", ["noteId", "userId"]),
+
+  featureFlags: defineTable({
+    key: v.string(), // e.g., "inline_editor"
+    value: v.boolean(),
+    description: v.optional(v.string()),
+    updatedAt: v.number(),
+    updatedBy: v.optional(v.string()), // Store user identifier (email or tokenIdentifier)
+  })
+    .index("by_key", ["key"]),
 });
 

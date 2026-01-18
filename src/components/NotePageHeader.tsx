@@ -44,9 +44,9 @@ export default function NotePageHeader({
     : null
 
   return (
-    <div className="bg-base-200 border-b border-base-300 px-4 py-3">
+    <div className="bg-base-200 border-b border-base-300 py-3">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm mb-3 flex-wrap">
+      <nav className="flex items-center gap-2 text-sm mb-3 flex-wrap px-2 sm:px-4">
         <Link
           to="/"
           className="flex items-center gap-1 text-base-content/70 hover:text-primary transition-colors"
@@ -74,7 +74,7 @@ export default function NotePageHeader({
       </nav>
 
       {/* Page Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-2 sm:px-4">
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-base-content">{note.title}</h1>
         </div>

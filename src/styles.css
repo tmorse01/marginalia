@@ -91,21 +91,42 @@ code {
 
 .editor-line {
   @apply min-h-[1.5em] whitespace-pre-wrap break-words;
+  @apply focus:outline-none;
 }
 
 .editor-line-focused {
   /* Focused lines still render tokens, syntax markers are overlaid */
+  @apply relative;
+}
+
+.editor-line-focused:focus {
+  @apply outline-none;
 }
 
 .editor-line-rendered {
   /* Line height matches textarea */
 }
 
+/* Contenteditable styling */
+.editor-line[contenteditable="true"] {
+  @apply cursor-text;
+}
+
+.editor-line[contenteditable="true"]:focus {
+  @apply outline-none;
+}
+
+/* Ensure syntax markers don't interfere with editing */
+.editor-line-focused .editor-syntax-marker {
+  @apply pointer-events-none;
+  @apply select-none;
+}
+
 /* Syntax markers - shown when line is focused */
 .editor-syntax-marker {
   @apply text-base-content/40 font-mono;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: 0.875rem;
+  font-size: inherit; /* Inherit font size from parent (header, paragraph, etc.) */
   user-select: none;
   transition: opacity 0.1s ease-in-out;
 }
@@ -147,30 +168,53 @@ code {
 /* Block elements */
 .editor-header {
   @apply font-bold mb-2 mt-4;
+  display: block !important;
+  line-height: 1.2 !important;
+}
+
+.editor-line h1.editor-header-1,
+.editor-line h2.editor-header-2,
+.editor-line h3.editor-header-3,
+.editor-line h4.editor-header-4,
+.editor-line h5.editor-header-5,
+.editor-line h6.editor-header-6 {
+  font-size: inherit;
 }
 
 .editor-header-1 {
   @apply text-3xl;
+  font-size: 1.875rem !important; /* Override parent font-size */
+  line-height: 1.2 !important;
 }
 
 .editor-header-2 {
   @apply text-2xl;
+  font-size: 1.5rem !important;
+  line-height: 1.2 !important;
 }
 
 .editor-header-3 {
   @apply text-xl;
+  font-size: 1.25rem !important;
+  line-height: 1.2 !important;
 }
 
 .editor-header-4 {
   @apply text-lg;
+  font-size: 1.125rem !important;
+  line-height: 1.2 !important;
 }
 
 .editor-header-5 {
   @apply text-base;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
 }
 
 .editor-header-6 {
   @apply text-sm;
+  font-size: 0.875rem !important;
+  line-height: 1.2 !important;
 }
 
 .editor-list-item {
@@ -371,6 +415,58 @@ code {
 /* Right sidebar tab content scrolling */
 .right-sidebar-tab-content {
   @apply flex-1 overflow-hidden flex flex-col;
+}
+
+/* CodeMirror Editor Styles */
+.cm-editor {
+  @apply font-mono;
+}
+
+.cm-editor .cm-content {
+  @apply text-base-content;
+}
+
+.cm-editor.cm-focused {
+  @apply border-primary;
+}
+
+/* CodeMirror markdown syntax highlighting */
+.cm-editor .cm-header {
+  @apply font-bold text-base-content;
+}
+
+.cm-editor .cm-link {
+  @apply text-primary;
+}
+
+.cm-editor .cm-link:hover {
+  @apply underline;
+}
+
+.cm-editor .cm-strong {
+  @apply font-bold text-base-content;
+}
+
+.cm-editor .cm-emphasis {
+  @apply italic text-base-content;
+}
+
+.cm-editor .cm-strikethrough {
+  @apply line-through text-base-content;
+}
+
+.cm-editor .cm-quote {
+  @apply italic text-base-content/80;
+}
+
+.cm-editor .cm-monospace,
+.cm-editor .cm-codeMark {
+  @apply bg-base-200 px-1.5 py-0.5 rounded text-sm;
+}
+
+.cm-editor .cm-listMark,
+.cm-editor .cm-headingMark {
+  @apply text-base-content/70;
 }
 
 /* Inline comments panel specific styles */

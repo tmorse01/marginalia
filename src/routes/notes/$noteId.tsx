@@ -16,6 +16,8 @@ import { useNotePresence } from '../../lib/presence'
 
 export const Route = createFileRoute('/notes/$noteId')({
   component: NotePage,
+  // Disable SSR for this route to avoid CodeMirror import issues
+  ssr: false,
 })
 
 function NotePage() {
@@ -107,105 +109,144 @@ function NotePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen relative">
+    <div className="flex flex-col w-full">
       {/* Page Header */}
-      <NotePageHeader
-        note={note}
-        isEditing={isEditing}
-        onEditToggle={() => setIsEditing(!isEditing)}
-        showSidebar={showSidebar}
-        activeTab={activeTab}
-        onCommentsClick={() => {
-          setShowSidebar(true)
-          setActiveTab('comments')
-        }}
-        onAIChatClick={() => {
-          setShowSidebar(true)
-          setActiveTab('ai')
-        }}
-        onMetadataClick={() => {
-          setShowSidebar(true)
-          setActiveTab('metadata')
-        }}
-        onShareClick={() => setShowShareDialog(true)}
-      />
-
-      {/* Main Content */}
-      <div className={`container mx-auto px-2 py-4 sm:px-4 sm:py-8 max-w-4xl flex-1 relative`}>
-        <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden">
-          {/* Title Section (when editing) */}
-          {isEditing && (
-            <div className="bg-base-200 border-b border-base-300 px-3 py-3 sm:px-6 sm:py-5">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="input input-bordered w-full focus:border-primary focus:outline-none"
-                placeholder="Note title"
-              />
-            </div>
-          )}
-
-          {/* Presence Indicator */}
-          {!isEditing && (
-            <div className="bg-base-200 border-b border-base-300 px-3 py-2 sm:px-6">
-              <PresenceIndicator
-                noteId={noteId as any}
-                currentUserId={currentUserId}
-                activeUsers={activeUsers ?? undefined}
-              />
-            </div>
-          )}
-
-        {/* Content Section */}
-        <div className="card-body p-3 sm:p-6">
-          {isEditing ? (
-            <NoteEditor
-              content={content}
-              onChange={setContent}
-              placeholder="Start writing in Markdown..."
-              onCursorChange={(start, end) => {
-                setCursorStart(start)
-                setCursorEnd(end)
-              }}
-            />
-          ) : (
-            <>
-              <LiveCursorOverlay
-                content={content}
-                entries={activeUsers ?? []}
-                currentUserId={currentUserId}
-              />
-              <CommentableContent
-                content={content}
-                noteId={noteId as any}
-                commentsByLine={lineComments}
-                currentUserId={currentUserId}
-                noteOwnerId={note.ownerId}
-                selectedLine={selectedLine}
-                onLineSelect={setSelectedLine}
-                onOpenComments={() => {
-                  if (!showSidebar) {
-                    setShowSidebar(true)
-                    setActiveTab('comments')
-                  }
-                }}
-              />
-            </>
-          )}
-
-          {!isEditing && (
-            <div id="comments-section" className="mt-6">
-              <GeneralComments
-                noteId={noteId as any}
-                threads={generalComments}
-                currentUserId={currentUserId}
-                noteOwnerId={note.ownerId}
-              />
-              <ActivityLog noteId={noteId as any} />
-            </div>
-          )}
+      <div className="w-full">
+        <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 sm:px-4 lg:px-6">
+          <NotePageHeader
+            note={note}
+            isEditing={isEditing}
+            onEditToggle={() => setIsEditing(!isEditing)}
+            showSidebar={showSidebar}
+            activeTab={activeTab}
+            onCommentsClick={() => {
+              if (showSidebar && activeTab === 'comments') {
+                setShowSidebar(false)
+              } else {
+                setShowSidebar(true)
+                setActiveTab('comments')
+              }
+            }}
+            onAIChatClick={() => {
+              if (showSidebar && activeTab === 'ai') {
+                setShowSidebar(false)
+              } else {
+                setShowSidebar(true)
+                setActiveTab('ai')
+              }
+            }}
+            onMetadataClick={() => {
+              if (showSidebar && activeTab === 'metadata') {
+                setShowSidebar(false)
+              } else {
+                setShowSidebar(true)
+                setActiveTab('metadata')
+              }
+            }}
+            onShareClick={() => setShowShareDialog(true)}
+          />
         </div>
+      </div>
+
+      {/* Main Content with Right Sidebar */}
+      <div className="flex gap-4 w-full">
+        {/* Main Content Area - fixed width to prevent layout shift */}
+        <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 py-4 sm:px-4 sm:py-8 lg:px-6 w-full">
+          <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden w-full">
+            {/* Title Section (when editing) */}
+            {isEditing && (
+              <div className="bg-base-200 border-b border-base-300 px-3 py-3 sm:px-6 sm:py-5">
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="input input-bordered w-full focus:border-primary focus:outline-none"
+                  placeholder="Note title"
+                />
+              </div>
+            )}
+
+            {/* Presence Indicator */}
+            {!isEditing && (
+              <div className="bg-base-200 border-b border-base-300 px-3 py-2 sm:px-6">
+                <PresenceIndicator
+                  noteId={noteId as any}
+                  currentUserId={currentUserId}
+                  activeUsers={activeUsers ?? undefined}
+                />
+              </div>
+            )}
+
+            {/* Content Section */}
+            <div className="card-body p-3 sm:p-6 w-full">
+              {isEditing ? (
+                <NoteEditor
+                  content={content}
+                  onChange={setContent}
+                  placeholder="Start writing in Markdown..."
+                  onCursorChange={(start, end) => {
+                    setCursorStart(start)
+                    setCursorEnd(end)
+                  }}
+                />
+              ) : (
+                <>
+                  <LiveCursorOverlay
+                    content={content}
+                    entries={activeUsers ?? []}
+                    currentUserId={currentUserId}
+                  />
+                  <CommentableContent
+                    content={content}
+                    noteId={noteId as any}
+                    commentsByLine={lineComments}
+                    currentUserId={currentUserId}
+                    noteOwnerId={note.ownerId}
+                    selectedLine={selectedLine}
+                    onLineSelect={setSelectedLine}
+                    onOpenComments={() => {
+                      if (!showSidebar) {
+                        setShowSidebar(true)
+                        setActiveTab('comments')
+                      }
+                    }}
+                  />
+                </>
+              )}
+
+              {!isEditing && (
+                <div id="comments-section" className="mt-6">
+                  <GeneralComments
+                    noteId={noteId as any}
+                    threads={generalComments}
+                    currentUserId={currentUserId}
+                    noteOwnerId={note.ownerId}
+                  />
+                  <ActivityLog noteId={noteId as any} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar - scrolls with content */}
+        {showSidebar && !isEditing && (
+          <div className="w-80 shrink-0 px-4 py-4">
+            <RightSidebar
+              noteId={noteId as any}
+              note={note}
+              commentsByLine={lineComments as any}
+              selectedLine={selectedLine}
+              onLineSelect={setSelectedLine}
+              currentUserId={currentUserId}
+              noteOwnerId={note.ownerId}
+              content={content}
+              showAllComments={true}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+          </div>
+        )}
       </div>
 
       <ShareDialog
@@ -213,26 +254,6 @@ function NotePage() {
         isOpen={showShareDialog}
         onClose={() => setShowShareDialog(false)}
       />
-
-      {/* Right Sidebar - positioned in existing margin space */}
-      {showSidebar && !isEditing && (
-        <div className="absolute right-[-336px] top-4 bottom-4 w-80 z-10">
-          <RightSidebar
-            noteId={noteId as any}
-            note={note}
-            commentsByLine={lineComments as any}
-            selectedLine={selectedLine}
-            onLineSelect={setSelectedLine}
-            currentUserId={currentUserId}
-            noteOwnerId={note.ownerId}
-            content={content}
-            showAllComments={true}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        </div>
-      )}
-      </div>
     </div>
   )
 }

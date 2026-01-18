@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import {
@@ -67,6 +67,17 @@ export default function InlineCommentsPanel({
   const [editingId, setEditingId] = useState<Id<'comments'> | null>(null)
   const [editText, setEditText] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState<Id<'comments'> | null>(null)
+  const commentInputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-focus input when a line is selected
+  useEffect(() => {
+    if (selectedLine !== null && currentUserId && commentInputRef.current) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        commentInputRef.current?.focus()
+      }, 100)
+    }
+  }, [selectedLine, currentUserId])
 
   const lines = content.split('\n')
   const currentThreads = selectedLine !== null ? (commentsByLine[selectedLine] || []) : []
@@ -272,8 +283,11 @@ export default function InlineCommentsPanel({
     .filter((lineNum) => (commentsByLine[lineNum] || []).length > 0)
     .sort((a, b) => a - b)
 
-  // Show all comments mode (Word-style)
-  if (showAllComments) {
+  // Single line view mode (when a line is selected) - takes priority over showAllComments
+  // Empty state when no line is selected
+  if (selectedLine === null) {
+    // Show all comments mode (Word-style) when no line is selected
+    if (showAllComments) {
     return (
       <div className="flex flex-col h-full">
         {/* Header */}
@@ -292,9 +306,9 @@ export default function InlineCommentsPanel({
             allLinesWithComments.map((lineNum) => {
               const threads = commentsByLine[lineNum] || []
               const lineContent = lines[lineNum] || ''
-              const originalLineContent =
+              const originalContent =
                 threads.length > 0 ? threads[0]?.lineContent || lineContent : lineContent
-              const isDrifted = lineContent !== originalLineContent && threads.length > 0
+              const hasDrifted = lineContent !== originalContent && threads.length > 0
               const isSelected = selectedLine === lineNum
 
               return (
@@ -323,7 +337,7 @@ export default function InlineCommentsPanel({
                     </div>
 
                     {/* Drift warning */}
-                    {isDrifted && (
+                    {hasDrifted && (
                       <div className="alert alert-warning py-1 px-2 mb-2">
                         <AlertTriangle size={12} />
                         <span className="text-xs">Line content has changed</span>
@@ -357,11 +371,9 @@ export default function InlineCommentsPanel({
         </div>
       </div>
     )
-  }
+    }
 
-  // Single line view mode (when a line is selected)
-  // Empty state when no line is selected
-  if (selectedLine === null) {
+    // Empty state when no line is selected and not showing all comments
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center text-base-content/50">
@@ -439,6 +451,7 @@ export default function InlineCommentsPanel({
         <div className="p-4 border-t border-base-300 bg-base-200/30">
           <div className="join w-full">
             <input
+              ref={commentInputRef}
               type="text"
               className="input input-bordered join-item flex-1"
               placeholder="Add a comment..."

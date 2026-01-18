@@ -184,12 +184,12 @@ export default function FileTree() {
 
     if (!over || active.id === over.id) return
 
-    const activeId = active.id as string
-    const overId = over.id as string
+    const draggedId = active.id as string
+    const targetId = over.id as string
 
     // Determine if we're moving within same parent or to different parent
-    const activeType = activeId.startsWith('folder-') ? 'folder' : 'note'
-    const overType = overId.startsWith('folder-') ? 'folder' : 'note'
+    const activeType = draggedId.startsWith('folder-') ? 'folder' : 'note'
+    const overType = targetId.startsWith('folder-') ? 'folder' : 'note'
 
     // Find the nodes
     const findNode = (id: string, nodes: Array<TreeNode>): TreeNode | null => {
@@ -203,8 +203,8 @@ export default function FileTree() {
       return null
     }
 
-    const activeNode = findNode(activeId, tree)
-    const overNode = findNode(overId, tree)
+    const activeNode = findNode(draggedId, tree)
+    const overNode = findNode(targetId, tree)
 
     if (!activeNode || !overNode) return
 
@@ -271,8 +271,8 @@ export default function FileTree() {
       ? (findNode(activeParentId ? `folder-${activeParentId}` : '', tree)?.children ?? [])
       : tree
 
-    const oldIndex = siblings.findIndex((n) => n.id === activeId)
-    const newIndex = siblings.findIndex((n) => n.id === overId)
+    const oldIndex = siblings.findIndex((n) => n.id === draggedId)
+    const newIndex = siblings.findIndex((n) => n.id === targetId)
 
     if (oldIndex === -1 || newIndex === -1) return
 

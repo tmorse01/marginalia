@@ -82,7 +82,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <ConvexProvider client={convex}>
           <SidebarProvider>
             <Header />
-            <div className="flex relative min-h-screen">
+            <div className="flex relative min-h-screen pt-16">
               <Sidebar />
               <MainContent>{children}</MainContent>
             </div>

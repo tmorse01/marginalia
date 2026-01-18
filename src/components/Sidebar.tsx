@@ -37,9 +37,9 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-[4rem] bottom-0 z-40 bg-base-200 border-r border-base-300 transition-all duration-300 flex flex-col ${
+        className={`fixed left-0 top-16 bottom-0 z-40 bg-base-200 border-r border-base-300 transition-all duration-300 flex flex-col ${
           isCollapsed ? 'w-0 overflow-hidden border-0' : 'w-64'
-        } ${isMobile ? '' : 'lg:static lg:z-auto lg:top-0 lg:h-screen'}`}
+        }`}
       >
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           <FileTree />
