@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import EditorLine from '../EditorLine'
 
 describe('EditorLine', () => {
@@ -74,7 +74,10 @@ describe('EditorLine', () => {
       />
     )
     const lineElement = container.querySelector('.editor-line')
-    lineElement?.click()
+    if (!lineElement) {
+      throw new Error('Expected editor line element to exist')
+    }
+    fireEvent.click(lineElement)
     expect(onFocus).toHaveBeenCalledWith(5, expect.any(Number))
   })
 

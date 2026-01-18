@@ -12,7 +12,7 @@ interface PresenceEntry {
 
 interface LiveCursorOverlayProps {
   content: string
-  entries: PresenceEntry[]
+  entries: Array<PresenceEntry>
   currentUserId?: Id<'users'>
 }
 

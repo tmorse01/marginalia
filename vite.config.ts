@@ -11,7 +11,7 @@ import netlify from '@netlify/vite-plugin-tanstack-start'
 const config = defineConfig(({ mode }) => {
   const isTest = mode === 'test' || process.env.VITEST === 'true'
 
-  const plugins = [
+  const basePlugins = [
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
@@ -20,9 +20,15 @@ const config = defineConfig(({ mode }) => {
     viteReact(),
   ]
 
-  if (!isTest) {
-    plugins.unshift(devtools(), netlify(), tanstackStart())
-  }
+  const startPlugins = tanstackStart()
+  const plugins = isTest
+    ? basePlugins
+    : [
+        devtools(),
+        netlify(),
+        ...(Array.isArray(startPlugins) ? startPlugins : [startPlugins]),
+        ...basePlugins,
+      ]
 
   const alias: Record<string, string> = {
     '@': fileURLToPath(new URL('./src', import.meta.url)),

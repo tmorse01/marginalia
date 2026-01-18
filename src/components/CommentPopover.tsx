@@ -17,8 +17,8 @@ interface CommentData {
   noteId: Id<'notes'>
   authorId: Id<'users'>
   body: string
-  lineNumber: number
-  lineContent: string
+  lineNumber?: number
+  lineContent?: string
   parentId?: Id<'comments'>
   resolved: boolean
   resolvedBy?: Id<'users'>
@@ -42,7 +42,7 @@ interface CommentPopoverProps {
   noteOwnerId?: Id<'users'>
   currentLineContent: string // For drift detection
   onClose: () => void
-  position: 'right' | 'bottom' // Desktop vs mobile
+  position: 'right' | 'bottom' // Desktop vs mobile (for styling hints)
 }
 
 export default function CommentPopover({
@@ -54,7 +54,6 @@ export default function CommentPopover({
   noteOwnerId,
   currentLineContent,
   onClose,
-  position,
 }: CommentPopoverProps) {
   const createComment = useMutation(api.comments.create)
   const replyToComment = useMutation(api.comments.reply)
@@ -154,7 +153,7 @@ export default function CommentPopover({
               <span className="text-xs text-base-content/40 ml-1">(edited)</span>
             )}
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {!isReply && canResolve(comment) && (
               <button
                 onClick={() => handleResolve(comment._id, !comment.resolved)}
@@ -237,57 +236,62 @@ export default function CommentPopover({
     )
   }
 
-  const popoverClasses = position === 'right'
-    ? 'comment-popover comment-popover-right'
-    : 'comment-popover comment-popover-bottom'
-
   return (
-    <div className={popoverClasses}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-base-300 bg-base-200/50">
-        <span className="text-sm font-medium">Line {lineNumber + 1}</span>
-        <button onClick={onClose} className="btn btn-xs btn-circle btn-ghost">
-          <X size={14} />
+    <div className="flex flex-col h-full">
+      {/* Header - using DaisyUI card styling */}
+      <div className="flex items-center justify-between p-4 border-b border-base-300 bg-base-200/50">
+        <h3 className="font-bold text-lg">Line {lineNumber + 1}</h3>
+        <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
+          <X size={18} />
         </button>
       </div>
 
-      {/* Drift warning */}
+      {/* Drift warning - using DaisyUI alert */}
       {isDrifted && threads.length > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-warning/10 text-warning text-xs">
-          <AlertTriangle size={12} />
-          <span>Line content changed</span>
+        <div className="alert alert-warning rounded-none py-2 px-4">
+          <AlertTriangle size={14} />
+          <span className="text-sm">Line content has changed since this comment</span>
         </div>
       )}
 
-      {/* Comments */}
-      <div className="p-3 space-y-4 max-h-80 overflow-y-auto">
+      {/* Comments - scrollable area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {threads.length === 0 ? (
-          <p className="text-sm text-base-content/50 text-center py-2">No comments yet</p>
+          <div className="text-center py-8 text-base-content/50">
+            <p className="text-sm">No comments yet</p>
+            <p className="text-xs mt-1">Be the first to add one!</p>
+          </div>
         ) : (
           threads.map((thread) => (
             <div
               key={thread._id}
-              className={`space-y-2 ${thread.resolved ? 'opacity-50' : ''}`}
+              className={`card bg-base-200 shadow-sm ${thread.resolved ? 'opacity-60' : ''}`}
             >
-              {thread.resolved && (
-                <span className="badge badge-success badge-xs gap-1">
-                  <Check size={8} /> Resolved
-                </span>
-              )}
-              {renderComment(thread)}
-              {thread.replies?.map((reply) => renderComment(reply, true))}
+              <div className="card-body p-3 gap-2">
+                {thread.resolved && (
+                  <div className="badge badge-success badge-sm gap-1">
+                    <Check size={10} /> Resolved
+                  </div>
+                )}
+                {renderComment(thread)}
+                {thread.replies.map((reply) => (
+                  <div key={reply._id} className="mt-2">
+                    {renderComment(reply, true)}
+                  </div>
+                ))}
+              </div>
             </div>
           ))
         )}
       </div>
 
-      {/* New comment input */}
+      {/* New comment input - using DaisyUI form controls */}
       {currentUserId && (
-        <div className="p-3 border-t border-base-300 bg-base-200/30">
-          <div className="flex gap-2">
+        <div className="p-4 border-t border-base-300 bg-base-200/30">
+          <div className="join w-full">
             <input
               type="text"
-              className="input input-bordered input-sm flex-1"
+              className="input input-bordered join-item flex-1"
               placeholder="Add a comment..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
@@ -295,10 +299,10 @@ export default function CommentPopover({
             />
             <button
               onClick={handleCreate}
-              className="btn btn-primary btn-sm btn-circle"
+              className="btn btn-primary join-item"
               disabled={!newComment.trim()}
             >
-              <Send size={14} />
+              <Send size={16} />
             </button>
           </div>
         </div>
@@ -306,4 +310,3 @@ export default function CommentPopover({
     </div>
   )
 }
-

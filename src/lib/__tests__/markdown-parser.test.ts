@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  parseInlineMarkdown,
-  getLineType,
-  tokenizeLine,
-  type Token,
-} from '../markdown-parser'
+import { parseInlineMarkdown, getLineType, tokenizeLine } from '../markdown-parser'
 
 describe('parseInlineMarkdown', () => {
   it('parses bold text', () => {

@@ -118,7 +118,7 @@ export function getLineContent(content: string, line: number): string {
 /**
  * Get all lines as an array
  */
-export function getLines(content: string): string[] {
+export function getLines(content: string): Array<string> {
   return content.split('\n')
 }
 

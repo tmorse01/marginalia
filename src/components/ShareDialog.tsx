@@ -17,7 +17,6 @@ export default function ShareDialog({
 }: ShareDialogProps) {
   const permissions = useQuery(api.permissions.list, { noteId })
   const note = useQuery(api.notes.get, { noteId })
-  const grantPermission = useMutation(api.permissions.grant)
   const revokePermission = useMutation(api.permissions.revoke)
   const updateNote = useMutation(api.notes.update)
 

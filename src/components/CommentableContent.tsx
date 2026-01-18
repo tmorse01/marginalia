@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MessageSquare, Plus } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -10,8 +10,8 @@ interface CommentData {
   noteId: Id<'notes'>
   authorId: Id<'users'>
   body: string
-  lineNumber: number
-  lineContent: string
+  lineNumber?: number
+  lineContent?: string
   resolved: boolean
   createdAt: number
   author: { name: string; email: string } | null
@@ -24,7 +24,7 @@ interface CommentWithReplies extends CommentData {
 interface CommentableContentProps {
   content: string
   noteId: Id<'notes'>
-  commentsByLine: Record<number, Array<CommentWithReplies>>
+  commentsByLine: Partial<Record<number, Array<CommentWithReplies>>>
   currentUserId?: Id<'users'>
   noteOwnerId?: Id<'users'>
   className?: string
@@ -32,6 +32,7 @@ interface CommentableContentProps {
 
 /**
  * Renders markdown content with hover-to-comment and inline popovers (like Word)
+ * Uses DaisyUI modal for desktop and drawer for mobile
  */
 export default function CommentableContent({
   content,
@@ -44,6 +45,8 @@ export default function CommentableContent({
   const [hoveredLine, setHoveredLine] = useState<number | null>(null)
   const [openPopover, setOpenPopover] = useState<number | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const modalRef = useRef<HTMLDialogElement>(null)
+  const drawerCheckboxRef = useRef<HTMLInputElement>(null)
 
   const lines = content.split('\n')
 
@@ -55,18 +58,38 @@ export default function CommentableContent({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Close popover on escape
+  // Control modal/drawer based on openPopover state
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenPopover(null)
+    if (openPopover !== null) {
+      if (isMobile) {
+        // Open drawer
+        if (drawerCheckboxRef.current) {
+          drawerCheckboxRef.current.checked = true
+        }
+      } else {
+        // Open modal
+        modalRef.current?.showModal()
+      }
+    } else {
+      // Close both
+      modalRef.current?.close()
+      if (drawerCheckboxRef.current) {
+        drawerCheckboxRef.current.checked = false
+      }
     }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [])
+  }, [openPopover, isMobile])
 
   const handleIndicatorClick = (lineNumber: number) => {
     setOpenPopover(openPopover === lineNumber ? null : lineNumber)
   }
+
+  const handleClose = () => {
+    setOpenPopover(null)
+  }
+
+  const currentLine = openPopover !== null ? openPopover : 0
+  const currentThreads = openPopover !== null ? (commentsByLine[openPopover] || []) : []
+  const currentLineContent = openPopover !== null ? lines[openPopover] : ''
 
   return (
     <>
@@ -102,48 +125,63 @@ export default function CommentableContent({
                   <Plus size={14} />
                 )}
               </button>
-
-              {/* Popover - desktop */}
-              {isOpen && !isMobile && (
-                <CommentPopover
-                  noteId={noteId}
-                  lineNumber={index}
-                  lineContent={threads[0]?.lineContent || line}
-                  threads={threads}
-                  currentUserId={currentUserId}
-                  noteOwnerId={noteOwnerId}
-                  currentLineContent={line}
-                  onClose={() => setOpenPopover(null)}
-                  position="right"
-                />
-              )}
             </div>
           )
         })}
       </div>
 
-      {/* Mobile bottom sheet */}
-      {openPopover !== null && isMobile && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/30 z-40" 
-            onClick={() => setOpenPopover(null)}
-          />
-          <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up">
+      {/* Desktop: DaisyUI Modal */}
+      <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle" onClose={handleClose}>
+        <div className="modal-box p-0 max-w-sm">
+          {openPopover !== null && (
             <CommentPopover
               noteId={noteId}
-              lineNumber={openPopover}
-              lineContent={commentsByLine[openPopover]?.[0]?.lineContent || lines[openPopover]}
-              threads={commentsByLine[openPopover] || []}
+              lineNumber={currentLine}
+              lineContent={currentThreads[0]?.lineContent || currentLineContent}
+              threads={currentThreads}
               currentUserId={currentUserId}
               noteOwnerId={noteOwnerId}
-              currentLineContent={lines[openPopover]}
-              onClose={() => setOpenPopover(null)}
-              position="bottom"
+              currentLineContent={currentLineContent}
+              onClose={handleClose}
+              position="right"
             />
+          )}
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={handleClose}>close</button>
+        </form>
+      </dialog>
+
+      {/* Mobile: DaisyUI Drawer */}
+      <div className="drawer drawer-end z-50">
+        <input
+          ref={drawerCheckboxRef}
+          id="comment-drawer"
+          type="checkbox"
+          className="drawer-toggle"
+          onChange={(e) => {
+            if (!e.target.checked) handleClose()
+          }}
+        />
+        <div className="drawer-side">
+          <label htmlFor="comment-drawer" aria-label="close sidebar" className="drawer-overlay" />
+          <div className="menu bg-base-100 text-base-content min-h-full w-80 max-w-[85vw] p-0">
+            {openPopover !== null && (
+              <CommentPopover
+                noteId={noteId}
+                lineNumber={currentLine}
+                lineContent={currentThreads[0]?.lineContent || currentLineContent}
+                threads={currentThreads}
+                currentUserId={currentUserId}
+                noteOwnerId={noteOwnerId}
+                currentLineContent={currentLineContent}
+                onClose={handleClose}
+                position="bottom"
+              />
+            )}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </>
   )
 }

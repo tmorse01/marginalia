@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Moon, Sun, Palette } from 'lucide-react'
+import { Palette } from 'lucide-react'
 
 const THEMES = [
   { value: 'dark', label: 'Dark' },
@@ -24,7 +24,6 @@ const THEMES = [
 
 export default function ThemeSelector() {
   const [currentTheme, setCurrentTheme] = useState<string>('dark')
-  const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
     // Get theme from localStorage or default to dark
@@ -37,7 +36,6 @@ export default function ThemeSelector() {
     setCurrentTheme(theme)
     localStorage.setItem('theme', theme)
     document.documentElement.setAttribute('data-theme', theme)
-    setIsOpen(false)
   }
 
   const currentThemeLabel = THEMES.find((t) => t.value === currentTheme)?.label || 'Dark'

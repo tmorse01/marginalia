@@ -23,7 +23,7 @@ export type LineType =
 
 export interface ParsedLine {
   lineType: LineType
-  tokens: Token[]
+  tokens: Array<Token>
   raw: string
 }
 
@@ -31,10 +31,10 @@ export interface ParsedLine {
  * Parse inline markdown elements in a line
  * Handles: bold, italic, code, links, strikethrough
  */
-export function parseInlineMarkdown(text: string): Token[] {
+export function parseInlineMarkdown(text: string): Array<Token> {
   if (!text) return [{ type: 'text', content: '' }]
 
-  const tokens: Token[] = []
+  const tokens: Array<Token> = []
   let i = 0
   let textStart = 0
   const len = text.length
@@ -303,7 +303,7 @@ function matchLink(text: string, start: number): { start: number; end: number; t
 
   // Check for (url) format
   if (i < text.length && text[i] === '(') {
-    let urlStart = i + 1
+    const urlStart = i + 1
     let urlEnd = urlStart
     let urlEscaped = false
     while (urlEnd < text.length) {
@@ -423,8 +423,8 @@ function matchItalic(text: string, start: number): { start: number; end: number;
   return null
 }
 
-function mergeTextTokens(tokens: Token[]): Token[] {
-  const merged: Token[] = []
+function mergeTextTokens(tokens: Array<Token>): Array<Token> {
+  const merged: Array<Token> = []
   let currentText = ''
 
   for (const token of tokens) {

@@ -289,7 +289,7 @@ export default function GeneralComments({
                     </span>
                   )}
                   {renderComment(thread)}
-                  {thread.replies?.map((reply) => (
+                  {thread.replies.map((reply) => (
                     <div key={reply._id} className="mt-2">
                       {renderComment(reply, true)}
                     </div>

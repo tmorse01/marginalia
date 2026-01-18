@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import NoteEditor from '../NoteEditor'
 
@@ -81,9 +80,7 @@ describe('NoteEditor', () => {
 
   it('focuses line when clicked', async () => {
     const content = 'line1\nline2\nline3'
-    const { container } = render(
-      <NoteEditor {...defaultProps} content={content} />
-    )
+    render(<NoteEditor {...defaultProps} content={content} />)
 
     const line2 = screen.getByTestId('editor-line-1')
     fireEvent.click(line2)
@@ -95,9 +92,7 @@ describe('NoteEditor', () => {
 
   it('unfocuses previous line when new line clicked', async () => {
     const content = 'line1\nline2\nline3'
-    const { container } = render(
-      <NoteEditor {...defaultProps} content={content} />
-    )
+    render(<NoteEditor {...defaultProps} content={content} />)
 
     const line1 = screen.getByTestId('editor-line-0')
     const line2 = screen.getByTestId('editor-line-1')

@@ -1,6 +1,6 @@
-import type { Id } from 'convex/_generated/dataModel'
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import type { Id } from 'convex/_generated/dataModel'
 
 interface PresenceEntry {
   userId: Id<'users'>
@@ -13,7 +13,7 @@ interface PresenceEntry {
 interface PresenceIndicatorProps {
   noteId: Id<'notes'>
   currentUserId?: Id<'users'>
-  activeUsers?: PresenceEntry[]
+  activeUsers?: Array<PresenceEntry>
 }
 
 export default function PresenceIndicator({

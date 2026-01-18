@@ -86,7 +86,7 @@ export const create = mutation({
       type: "comment",
       actorId: args.authorId,
       metadata: { 
-        lineNumber: isGeneralComment ? null : args.lineNumber, 
+        lineNumber: isGeneralComment ? undefined : args.lineNumber, 
         commentId,
         isGeneral: isGeneralComment,
       },
@@ -378,12 +378,8 @@ export const listByNote = query({
     }));
 
     // Separate general comments (no lineNumber) from line-specific comments
-    const generalComments = threads.filter(
-      (t) => t.lineNumber === undefined || t.lineNumber === null
-    );
-    const lineComments = threads.filter(
-      (t) => t.lineNumber !== undefined && t.lineNumber !== null
-    );
+    const generalComments = threads.filter((t) => t.lineNumber === undefined);
+    const lineComments = threads.filter((t) => t.lineNumber !== undefined);
 
     // Group line comments by line number
     const byLine = lineComments.reduce<Record<number, typeof threads>>(
