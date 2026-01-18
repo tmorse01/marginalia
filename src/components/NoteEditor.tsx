@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { getLines, lineColToOffset, getLineNumber } from '../lib/cursor-utils'
 import EditorLine from './EditorLine'
-import { getLines, offsetToLineCol, lineColToOffset, getLineNumber } from '../lib/cursor-utils'
 
 interface NoteEditorProps {
   content: string
@@ -73,7 +73,7 @@ export default function NoteEditor({
   }, [content, onCursorChange])
 
   // Handle key events to update focused line
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback(() => {
     // Let default behavior happen first, then update focus
     setTimeout(() => {
       const textarea = textareaRef.current
@@ -140,9 +140,6 @@ export default function NoteEditor({
         onSelect={handleSelect}
         placeholder={placeholder}
         className={`textarea textarea-bordered w-full min-h-[400px] resize-none focus:outline-none focus:border-primary font-mono text-sm bg-base-100 text-base-content ${className}`}
-        style={{
-          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-        }}
       />
     )
   }
@@ -150,7 +147,7 @@ export default function NoteEditor({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full border border-base-300 rounded-lg bg-base-100 overflow-hidden ${className}`}
+      className={`relative w-full border border-base-300 rounded-lg bg-base-100 overflow-hidden min-h-[400px] ${className}`}
       style={editorHeight ? { height: `${editorHeight}px` } : undefined}
     >
       {/* Hidden textarea for input handling */}
@@ -162,12 +159,10 @@ export default function NoteEditor({
         onScroll={handleScroll}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="absolute inset-0 w-full h-full resize-none focus:outline-none bg-transparent text-transparent caret-primary selection:bg-primary/20 placeholder:text-base-content/50"
+        className="absolute inset-0 w-full h-full resize-none focus:outline-none bg-transparent text-transparent caret-primary selection:bg-primary/20 placeholder:text-base-content/50 overflow-hidden font-mono text-sm leading-6"
         style={{
-          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-          fontSize: '0.875rem',
-          lineHeight: '1.5',
           padding: '0.75rem 1rem',
+          boxSizing: 'border-box',
           zIndex: 2,
         }}
         spellCheck={false}
@@ -176,15 +171,14 @@ export default function NoteEditor({
       {/* Visible line overlay */}
       <div
         ref={linesRef}
-        className="absolute inset-0 overflow-auto pointer-events-none"
+        className="absolute inset-0 overflow-auto pointer-events-none font-mono text-sm leading-6"
         style={{
-          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-          fontSize: '0.875rem',
-          lineHeight: '1.5',
+          padding: '0.75rem 1rem',
+          boxSizing: 'border-box',
           zIndex: 1,
         }}
       >
-        <div className="editor-lines-container" style={{ padding: '0.75rem 1rem' }}>
+        <div className="editor-lines-container">
           {lines.length === 0 ? (
             <div className="editor-line editor-line-empty text-base-content/50 pointer-events-auto">
               {placeholder}

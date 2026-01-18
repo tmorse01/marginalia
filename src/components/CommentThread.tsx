@@ -286,7 +286,8 @@ export default function CommentThread({
         {isEditing ? (
           <div className="space-y-2">
             <textarea
-              className="textarea textarea-bordered w-full text-sm"
+              className="textarea textarea-bordered w-full text-sm p-2 sm:p-3"
+              style={{ fontFamily: 'inherit' }}
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               rows={2}
@@ -329,7 +330,8 @@ export default function CommentThread({
         {replyingTo === comment._id && (
           <div className="mt-2 space-y-2">
             <textarea
-              className="textarea textarea-bordered w-full text-sm"
+              className="textarea textarea-bordered w-full text-sm p-2 sm:p-3"
+              style={{ fontFamily: 'inherit' }}
               placeholder="Write a reply..."
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
@@ -400,7 +402,7 @@ export default function CommentThread({
 
       {/* Pending line comment input (from hover interaction) */}
       {pendingCommentLine && currentUserId && (
-        <div className="alert alert-info mb-4">
+        <div className="alert alert-info mb-3 sm:mb-4 p-2 sm:p-4">
           <MessageSquarePlus size={20} />
           <div className="flex-1">
             <h4 className="font-medium mb-2">Comment on line {pendingCommentLine.lineNumber + 1}</h4>
@@ -408,14 +410,15 @@ export default function CommentThread({
               {pendingCommentLine.lineContent || '(empty line)'}
             </div>
           <textarea
-            className="textarea textarea-bordered w-full"
+            className="textarea textarea-bordered w-full p-2 sm:p-3"
+            style={{ fontFamily: 'inherit' }}
             placeholder="Write your comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             rows={3}
             autoFocus
           />
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-2 sm:mt-3">
               <button
                 onClick={handleCreateLineComment}
                 className="btn btn-primary btn-sm"
@@ -448,7 +451,7 @@ export default function CommentThread({
               key={thread._id}
               className={`card bg-base-200 shadow-sm ${thread.resolved ? 'opacity-60' : ''}`}
             >
-              <div className="card-body p-4">
+              <div className="card-body p-2 sm:p-4">
                 {/* Line reference */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="badge badge-outline badge-sm">
@@ -490,16 +493,17 @@ export default function CommentThread({
 
         {/* General comment input */}
         {showGeneralInput && currentUserId && (
-          <div className="card bg-base-200 p-4">
+          <div className="card bg-base-200 p-2 sm:p-4">
             <textarea
-              className="textarea textarea-bordered w-full"
+              className="textarea textarea-bordered w-full p-2 sm:p-3"
+              style={{ fontFamily: 'inherit' }}
               placeholder="Write a general comment..."
               value={generalComment}
               onChange={(e) => setGeneralComment(e.target.value)}
               rows={3}
               autoFocus
             />
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 sm:mt-3">
               <button
                 onClick={handleCreateGeneralComment}
                 className="btn btn-primary btn-sm"
@@ -527,7 +531,7 @@ export default function CommentThread({
               key={thread._id}
               className={`card bg-base-200 shadow-sm ${thread.resolved ? 'opacity-60' : ''}`}
             >
-              <div className="card-body p-4">
+              <div className="card-body p-2 sm:p-4">
                 {thread.resolved && (
                   <span className="badge badge-success badge-sm mb-2 gap-1">
                     <Check size={12} />

@@ -117,55 +117,64 @@ function NotePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="flex justify-between items-center mb-4">
+    <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8 max-w-4xl">
+      <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden">
+        {/* Header Section with subtle background */}
+        <div className="bg-base-200/50 border-b border-base-300 px-3 py-3 sm:px-6 sm:py-5">
+          {/* Action buttons - right aligned above title */}
+          <div className="flex justify-end gap-2 mb-3">
+            <button
+              onClick={() => setShowShareDialog(true)}
+              className="btn btn-ghost btn-sm gap-2"
+            >
+              <Share2 size={16} />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`btn btn-sm gap-2 ${isEditing ? 'btn-primary' : 'btn-ghost'}`}
+            >
+              {isEditing ? (
+                <>
+                  <Eye size={16} />
+                  <span className="hidden sm:inline">View</span>
+                </>
+              ) : (
+                <>
+                  <Edit size={16} />
+                  <span className="hidden sm:inline">Edit</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Title - full width */}
+          <div className="w-full">
             {isEditing ? (
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="input input-bordered flex-1 mr-4"
+                className="input input-bordered w-full focus:border-primary focus:outline-none"
                 placeholder="Note title"
               />
             ) : (
-              <h1 className="text-3xl font-bold">{note.title}</h1>
+              <h1 className="text-3xl font-bold text-base-content">{note.title}</h1>
             )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowShareDialog(true)}
-                className="btn btn-ghost btn-sm gap-2"
-              >
-                <Share2 size={16} />
-                <span className="hidden sm:inline">Share</span>
-              </button>
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className={`btn btn-sm gap-2 ${isEditing ? 'btn-primary' : 'btn-ghost'}`}
-              >
-                {isEditing ? (
-                  <>
-                    <Eye size={16} />
-                    <span className="hidden sm:inline">View</span>
-                  </>
-                ) : (
-                  <>
-                    <Edit size={16} />
-                    <span className="hidden sm:inline">Edit</span>
-                  </>
-                )}
-              </button>
-            </div>
           </div>
 
-          <PresenceIndicator
-            noteId={noteId as any}
-            currentUserId={currentUserId}
-            activeUsers={activeUsers ?? undefined}
-          />
+          <div className="mt-3">
+            <PresenceIndicator
+              noteId={noteId as any}
+              currentUserId={currentUserId}
+              activeUsers={activeUsers ?? undefined}
+            />
+          </div>
+        </div>
 
-          <div className="mt-4 relative">
+        {/* Content Section with clear separation */}
+        <div className="card-body p-3 sm:p-6">
+          <div className={`relative ${isEditing ? 'bg-base-200/30 rounded-lg p-2 sm:p-4 border border-base-300' : 'bg-base-200/20 rounded-lg p-3 sm:p-6 border border-base-300/50'}`}>
             {isEditing ? (
               <NoteEditor
                 content={content}
@@ -193,7 +202,7 @@ function NotePage() {
           </div>
 
           {!isEditing && (
-            <div id="comments-section">
+            <div id="comments-section" className="mt-6">
               <CommentThread
                 noteId={noteId as any}
                 noteContent={content}
