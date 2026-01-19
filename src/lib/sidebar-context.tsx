@@ -5,12 +5,15 @@ interface SidebarContextType {
   isCollapsed: boolean
   toggleCollapse: () => void
   setIsCollapsed: (collapsed: boolean) => void
+  isLandingPage: boolean
+  setIsLandingPage: (isLanding: boolean) => void
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsedState] = useState(false)
+  const [isLandingPage, setIsLandingPageState] = useState(false)
 
   // Load collapsed state from localStorage
   useEffect(() => {
@@ -29,8 +32,12 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     setIsCollapsed(!isCollapsed)
   }
 
+  const setIsLandingPage = (isLanding: boolean) => {
+    setIsLandingPageState(isLanding)
+  }
+
   return (
-    <SidebarContext.Provider value={{ isCollapsed, toggleCollapse, setIsCollapsed }}>
+    <SidebarContext.Provider value={{ isCollapsed, toggleCollapse, setIsCollapsed, isLandingPage, setIsLandingPage }}>
       {children}
     </SidebarContext.Provider>
   )

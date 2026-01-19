@@ -8,7 +8,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay
+  DragOverlay,
+  useDroppable
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -16,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, Folder, FileText } from 'lucide-react'
+import { Plus, Folder, FileText, Search, X } from 'lucide-react'
 import { useCurrentUser } from '../lib/auth'
 import FileTreeItem from './FileTreeItem'
 import AlertToast from './AlertToast'
@@ -25,6 +26,23 @@ import type {
   DragStartEvent,
   DragOverEvent} from '@dnd-kit/core';
 import type { Id } from 'convex/_generated/dataModel'
+
+// Root drop zone - invisible but captures drops at the top of the tree
+function RootDropZone({ activeId }: { activeId: string | null }) {
+  const { setNodeRef } = useDroppable({
+    id: 'root-drop-zone',
+    disabled: !activeId,
+  })
+
+  if (!activeId) return null
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="absolute top-0 left-0 right-0 h-4 z-10"
+    />
+  )
+}
 
 interface TreeNode {
   id: string
@@ -51,13 +69,24 @@ export default function FileTree() {
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeItemName, setActiveItemName] = useState<string | null>(null)
+  const [activeItemType, setActiveItemType] = useState<'note' | 'folder' | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
+  const [isOverRoot, setIsOverRoot] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [showAlert, setShowAlert] = useState(false)
   const [alertMessage, setAlertMessage] = useState('')
   const [alertType, setAlertType] = useState<'error' | 'warning' | 'info'>('error')
 
+  // Use activation distance to prevent accidental drags
+  // Files are easy to drag, but require small movement to start
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Require 5px movement before drag starts - prevents accidental drags while allowing easy file dragging
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -81,18 +110,6 @@ export default function FileTree() {
       localStorage.setItem('fileTreeExpanded', JSON.stringify(Array.from(expandedFolders)))
     }
   }, [expandedFolders])
-
-  const toggleFolder = (folderId: string) => {
-    setExpandedFolders((prev) => {
-      const next = new Set(prev)
-      if (next.has(folderId)) {
-        next.delete(folderId)
-      } else {
-        next.add(folderId)
-      }
-      return next
-    })
-  }
 
   // Build tree structure
   const tree = useMemo(() => {
@@ -167,25 +184,221 @@ export default function FileTree() {
     return sortNodes(rootNodes)
   }, [folders, notes, userId])
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if no input is focused
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+      ) {
+        return
+      }
+
+      const findNode = (id: string, nodes: Array<TreeNode>): TreeNode | null => {
+        for (const node of nodes) {
+          if (node.id === id) return node
+          if (node.children) {
+            const found = findNode(id, node.children)
+            if (found) return found
+          }
+        }
+        return null
+      }
+
+      const getAllNodes = (nodes: Array<TreeNode>): Array<TreeNode> => {
+        const result: Array<TreeNode> = []
+        for (const node of nodes) {
+          result.push(node)
+          if (node.children) {
+            result.push(...getAllNodes(node.children))
+          }
+        }
+        return result
+      }
+
+      const allNodes = getAllNodes(tree)
+      const currentIndex = selectedId
+        ? allNodes.findIndex((n) => n.id === selectedId)
+        : -1
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault()
+          if (allNodes.length > 0) {
+            const nextIndex = currentIndex < allNodes.length - 1 ? currentIndex + 1 : 0
+            setSelectedId(allNodes[nextIndex].id)
+          }
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          if (allNodes.length > 0) {
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : allNodes.length - 1
+            setSelectedId(allNodes[prevIndex].id)
+          }
+          break
+        case 'Enter':
+          e.preventDefault()
+          if (selectedId) {
+            const node = findNode(selectedId, tree)
+            if (node) {
+              if (node.type === 'note' && node.noteId) {
+                navigate({ to: '/notes/$noteId', params: { noteId: node.noteId } })
+              } else if (node.type === 'folder' && node.folderId) {
+                toggleFolder(node.folderId)
+              }
+            }
+          }
+          break
+        case 'F2':
+          e.preventDefault()
+          // Rename will be handled by FileTreeItem
+          break
+        case 'Delete':
+          e.preventDefault()
+          if (selectedId) {
+            const node = findNode(selectedId, tree)
+            if (node) {
+              // Delete will be handled by context menu or we can add direct delete
+              // For now, just show alert that delete should be done via context menu
+            }
+          }
+          break
+        case 'Escape':
+          setSelectedId(null)
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [tree, selectedId, navigate])
+
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev)
+      if (next.has(folderId)) {
+        next.delete(folderId)
+      } else {
+        next.add(folderId)
+      }
+      return next
+    })
+  }
+
+  // Filter tree based on search query
+  const filteredTree = useMemo(() => {
+    if (!searchQuery.trim()) return tree
+
+    const query = searchQuery.toLowerCase().trim()
+    const filterNodes = (nodes: Array<TreeNode>): Array<TreeNode> => {
+      const filtered: Array<TreeNode> = []
+      for (const node of nodes) {
+        const matches = node.name.toLowerCase().includes(query)
+        const filteredChildren = node.children ? filterNodes(node.children) : undefined
+        const hasMatchingChildren = filteredChildren && filteredChildren.length > 0
+
+        if (matches || hasMatchingChildren) {
+          filtered.push({
+            ...node,
+            children: filteredChildren,
+          })
+        }
+      }
+      return filtered
+    }
+
+    return filterNodes(tree)
+  }, [tree, searchQuery])
+
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string)
+    const draggedId = event.active.id as string
+    setActiveId(draggedId)
+    
+    // Find the node to get its name and type
+    const findNode = (id: string, nodes: Array<TreeNode>): TreeNode | null => {
+      for (const node of nodes) {
+        if (node.id === id) return node
+        if (node.children) {
+          const found = findNode(id, node.children)
+          if (found) return found
+        }
+      }
+      return null
+    }
+    
+    const node = findNode(draggedId, tree)
+    if (node) {
+      setActiveItemName(node.name)
+      setActiveItemType(node.type)
+    }
   }
 
   const handleDragOver = (event: DragOverEvent) => {
     if (event.over) {
-      setOverId(event.over.id as string)
+      const overIdStr = event.over.id as string
+      setOverId(overIdStr)
+      setIsOverRoot(overIdStr === 'root-drop-zone')
+    } else {
+      setOverId(null)
+      setIsOverRoot(false)
     }
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
+    setActiveItemName(null)
+    setActiveItemType(null)
     setOverId(null)
+    setIsOverRoot(false)
 
     if (!over || active.id === over.id) return
 
     const draggedId = active.id as string
     const targetId = over.id as string
+
+    // Handle dropping on root
+    if (targetId === 'root-drop-zone') {
+      const findNode = (id: string, nodes: Array<TreeNode>): TreeNode | null => {
+        for (const node of nodes) {
+          if (node.id === id) return node
+          if (node.children) {
+            const found = findNode(id, node.children)
+            if (found) return found
+          }
+        }
+        return null
+      }
+
+      const activeNode = findNode(draggedId, tree)
+      if (!activeNode) return
+
+      // Don't move if already at root
+      if (!activeNode.parentId) return
+
+      const activeType = draggedId.startsWith('folder-') ? 'folder' : 'note'
+
+      try {
+        if (activeType === 'note' && activeNode.noteId) {
+          await moveNote({
+            noteId: activeNode.noteId,
+            folderId: undefined,
+          })
+        } else if (activeType === 'folder' && activeNode.folderId) {
+          await moveFolder({
+            folderId: activeNode.folderId,
+            newParentId: undefined,
+          })
+        }
+      } catch (error) {
+        console.error('Failed to move to root:', error)
+        setAlertMessage('Failed to move to root. Please try again.')
+        setAlertType('error')
+        setShowAlert(true)
+      }
+      return
+    }
 
     // Determine if we're moving within same parent or to different parent
     const activeType = draggedId.startsWith('folder-') ? 'folder' : 'note'
@@ -357,9 +570,12 @@ export default function FileTree() {
               onToggleExpand={() => node.folderId && toggleFolder(node.folderId)}
               depth={depth}
               onRename={undefined}
-              onNewNote={() => handleNewNote(node.folderId)}
-              onNewFolder={() => handleNewFolder(node.folderId)}
+              onNewNote={() => handleNewNote(node.folderId ?? undefined)}
+              onNewFolder={() => handleNewFolder(node.folderId ?? undefined)}
               isOver={overId === node.id}
+              isSelected={selectedId === node.id}
+              onSelect={() => setSelectedId(node.id)}
+              searchQuery={searchQuery}
             >
               {children}
             </FileTreeItem>
@@ -394,44 +610,72 @@ export default function FileTree() {
       onDragEnd={handleDragEnd}
     >
       <div className="file-tree">
-        <div className="flex items-center justify-between px-2 py-2 border-b border-base-300">
-          <h2 className="text-sm font-semibold text-base-content/70">Files</h2>
-          <div className="flex gap-1">
-            <button
-              onClick={() => handleNewNote()}
-              className="btn btn-ghost btn-xs btn-square"
-              title="New Note"
-            >
-              <Plus className="size-[1.2em]" strokeWidth={2.5} />
-            </button>
-            <button
-              onClick={() => handleNewFolder()}
-              className="btn btn-ghost btn-xs btn-square"
-              title="New Folder"
-            >
-              <Folder className="size-[1.2em]" strokeWidth={2.5} />
-            </button>
+        <div className="border-b border-base-300">
+          <div className="flex items-center justify-between px-2 py-2">
+            <h2 className="text-sm font-semibold text-base-content/70">Files</h2>
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleNewNote()}
+                className="btn btn-ghost btn-xs btn-square"
+                title="New Note"
+              >
+                <Plus className="size-[1.2em]" strokeWidth={2.5} />
+              </button>
+              <button
+                onClick={() => handleNewFolder()}
+                className="btn btn-ghost btn-xs btn-square"
+                title="New Folder"
+              >
+                <Folder className="size-[1.2em]" strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+          <div className="px-2 pb-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-base-content/40" />
+              <input
+                type="text"
+                placeholder="Search files..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input input-sm input-bordered w-full pl-8 pr-8"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-square"
+                  title="Clear search"
+                >
+                  <X className="size-3" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
-        <div className="overflow-y-auto flex-1 min-h-0">
-          {tree.length === 0 ? (
+        <div className="overflow-y-auto flex-1 min-h-0 relative">
+          <RootDropZone activeId={activeId} />
+          {/* Root highlight line - shows when dragging over root area */}
+          {activeId && isOverRoot && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary z-20 shadow-sm" />
+          )}
+          {filteredTree.length === 0 ? (
             <div className="p-4 text-center text-sm text-base-content/60">
-              No files yet. Create a note or folder to get started.
+              {searchQuery ? 'No files match your search.' : 'No files yet. Create a note or folder to get started.'}
             </div>
           ) : (
-            renderTree(tree)
+            renderTree(filteredTree)
           )}
         </div>
       </div>
       <DragOverlay>
-        {activeId ? (
-          <div className="opacity-50 bg-base-200 p-2 rounded flex items-center gap-2">
-            {activeId.startsWith('folder-') ? (
-              <Folder size={16} />
+        {activeId && activeItemName ? (
+          <div className="opacity-80 bg-base-200 border border-base-300 shadow-lg p-2 rounded flex items-center gap-2 min-w-[120px]">
+            {activeItemType === 'folder' ? (
+              <Folder size={16} className="text-primary" />
             ) : (
-              <FileText size={16} />
+              <FileText size={16} className="text-base-content/70" />
             )}
-            <span>{activeId}</span>
+            <span className="text-sm font-medium truncate">{activeItemName}</span>
           </div>
         ) : null}
       </DragOverlay>

@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { Folder, Trash2, Share2, Copy, Move, Edit, Plus } from 'lucide-react'
+import { Folder, Trash2, Share2, Copy, Move, Edit, Plus, Home } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { useCurrentUser } from '../lib/auth'
 import ShareDialog from './ShareDialog'
 import ConfirmDialog from './ConfirmDialog'
 import AlertToast from './AlertToast'
+import FolderPicker from './FolderPicker'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface FileTreeContextMenuProps {
@@ -30,7 +31,7 @@ export default function FileTreeContextMenu({
   itemType,
   itemId,
   itemName,
-  folderId: _folderId,
+  folderId,
   onClose,
   onRename: _onRename,
   onNewNote,
@@ -42,6 +43,8 @@ export default function FileTreeContextMenu({
   const duplicateNote = useMutation(api.notes.duplicate)
   const updateNote = useMutation(api.notes.update)
   const updateFolder = useMutation(api.folders.update)
+  const moveNote = useMutation(api.notes.moveToFolder)
+  const moveFolder = useMutation(api.folders.move)
   const currentUserId = useCurrentUser()
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [showMoveDialog, setShowMoveDialog] = useState(false)
@@ -162,6 +165,38 @@ export default function FileTreeContextMenu({
     setRenameValue(itemName)
   }
 
+  const handleMoveSelect = async (targetFolderId: Id<'folders'> | null) => {
+    try {
+      if (itemType === 'note') {
+        await moveNote({
+          noteId: itemId as Id<'notes'>,
+          folderId: targetFolderId ?? undefined,
+        })
+      } else {
+        await moveFolder({
+          folderId: itemId as Id<'folders'>,
+          newParentId: targetFolderId ?? undefined,
+        })
+      }
+      setShowMoveDialog(false)
+      onClose()
+    } catch (error) {
+      console.error('Failed to move item:', error)
+      setAlertMessage('Failed to move item. Please try again.')
+      setShowAlert(true)
+    }
+  }
+
+  const handleMoveCancel = () => {
+    setShowMoveDialog(false)
+  }
+
+  // Get current folder ID
+  // For notes: folderId prop is the note's current folderId
+  // For folders: folderId prop is the folder's parentId (where it currently is)
+  const currentFolderId = folderId ?? undefined
+  const excludeFolderId = itemType === 'folder' ? (itemId as Id<'folders'>) : undefined
+
   if (!isOpen) return null
 
   return (
@@ -255,6 +290,34 @@ export default function FileTreeContextMenu({
               <Move size={16} />
               Move to Folder
             </button>
+            {folderId && (
+              <button
+                onClick={async () => {
+                  try {
+                    if (itemType === 'note') {
+                      await moveNote({
+                        noteId: itemId as Id<'notes'>,
+                        folderId: undefined,
+                      })
+                    } else {
+                      await moveFolder({
+                        folderId: itemId as Id<'folders'>,
+                        newParentId: undefined,
+                      })
+                    }
+                    onClose()
+                  } catch (error) {
+                    console.error('Failed to move to root:', error)
+                    setAlertMessage('Failed to move to root. Please try again.')
+                    setShowAlert(true)
+                  }
+                }}
+                className="w-full px-4 py-2 text-left hover:bg-base-300 flex items-center gap-2 text-sm"
+              >
+                <Home size={16} />
+                Move to Root
+              </button>
+            )}
             <div className="divider my-1"></div>
             <button
               onClick={handleDeleteClick}
@@ -279,26 +342,16 @@ export default function FileTreeContextMenu({
       )}
 
       {showMoveDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-base-200 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold mb-4">Move to Folder</h3>
-            <p className="text-sm text-base-content/60 mb-4">
-              Move "{itemName}" to a different folder
-            </p>
-            <p className="text-xs text-base-content/40">
-              Full folder picker implementation coming soon
-            </p>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => {
-                  setShowMoveDialog(false)
-                  onClose()
-                }}
-                className="btn btn-ghost btn-sm"
-              >
-                Cancel
-              </button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={handleMoveCancel}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <FolderPicker
+              currentFolderId={currentFolderId}
+              excludeFolderId={excludeFolderId}
+              onSelect={handleMoveSelect}
+              onCancel={handleMoveCancel}
+              itemType={itemType}
+              itemName={itemName}
+            />
           </div>
         </div>
       )}

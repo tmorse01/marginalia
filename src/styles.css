@@ -280,6 +280,10 @@ code {
   @apply bg-warning/5;
 }
 
+.commentable-line.has-resolved-comments {
+  @apply bg-base-200/20;
+}
+
 .commentable-line.is-active {
   @apply bg-primary/10;
 }
@@ -311,6 +315,14 @@ code {
 
 .comment-indicator.has-comments:hover {
   @apply bg-warning/80;
+}
+
+.comment-indicator.has-resolved-comments {
+  @apply opacity-100 bg-base-300/40 text-base-content/40;
+}
+
+.comment-indicator.has-resolved-comments:hover {
+  @apply bg-base-300/60 text-base-content/60;
 }
 
 .comment-indicator.is-open {

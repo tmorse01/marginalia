@@ -69,13 +69,15 @@ export default function CommentableContent({
         const threads = commentsByLine[index] || []
         const unresolvedCount = threads.filter(t => !t.resolved).length
         const hasComments = threads.length > 0
+        const hasUnresolvedComments = unresolvedCount > 0
+        const hasOnlyResolvedComments = hasComments && unresolvedCount === 0
         const isHovered = hoveredLine === index
         const isSelected = selectedLine === index
 
         return (
           <div
             key={index}
-            className={`commentable-line ${hasComments ? 'has-comments' : ''} ${isSelected ? 'is-active' : ''}`}
+            className={`commentable-line ${hasUnresolvedComments ? 'has-comments' : ''} ${hasOnlyResolvedComments ? 'has-resolved-comments' : ''} ${isSelected ? 'is-active' : ''}`}
             onMouseEnter={() => setHoveredLine(index)}
             onMouseLeave={() => setHoveredLine(null)}
           >
@@ -87,8 +89,8 @@ export default function CommentableContent({
             {/* Right-side comment indicator */}
             <button
               onClick={() => handleIndicatorClick(index)}
-              className={`comment-indicator ${isHovered || hasComments ? 'visible' : ''} ${hasComments ? 'has-comments' : ''} ${isSelected ? 'is-open' : ''}`}
-              title={hasComments ? `${threads.length} comment${threads.length > 1 ? 's' : ''}` : 'Add comment'}
+              className={`comment-indicator ${isHovered || hasComments ? 'visible' : ''} ${hasUnresolvedComments ? 'has-comments' : ''} ${hasOnlyResolvedComments ? 'has-resolved-comments' : ''} ${isSelected ? 'is-open' : ''}`}
+              title={hasComments ? `${threads.length} comment${threads.length > 1 ? 's' : ''} (${unresolvedCount} unresolved)` : 'Add comment'}
             >
               {hasComments ? (
                 <span className="comment-count">{unresolvedCount || <MessageSquare size={12} />}</span>

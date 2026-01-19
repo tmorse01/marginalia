@@ -8,19 +8,21 @@ import ThemeSelector from './ThemeSelector'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
-  const { isCollapsed, toggleCollapse } = useSidebar()
+  const { isCollapsed, toggleCollapse, isLandingPage } = useSidebar()
 
   return (
     <>
       <header className="navbar bg-base-300 shadow-lg fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center gap-2">
-          <button
-            onClick={toggleCollapse}
-            className="btn btn-ghost btn-square"
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <PanelLeft className="size-[1.2em]" strokeWidth={2.5} />
-          </button>
+          {!isLandingPage && (
+            <button
+              onClick={toggleCollapse}
+              className="btn btn-ghost btn-square"
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <PanelLeft className="size-[1.2em]" strokeWidth={2.5} />
+            </button>
+          )}
           <Link to="/" className="btn btn-ghost text-xl gap-2">
             <Logo />
             Marginalia

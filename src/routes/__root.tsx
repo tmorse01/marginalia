@@ -7,7 +7,7 @@ import { useEffect } from 'react'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import MainContent from '../components/MainContent'
-import { SidebarProvider } from '../lib/sidebar-context'
+import { SidebarProvider, useSidebar } from '../lib/sidebar-context'
 import { convex } from '../lib/convex'
 
 import appCss from '../styles.css?url'
@@ -41,6 +41,20 @@ export const Route = createRootRoute({
 
   shellComponent: RootDocument,
 })
+
+function RootDocumentContent({ children }: { children: React.ReactNode }) {
+  const { isLandingPage } = useSidebar()
+
+  return (
+    <>
+      <Header />
+      <div className="flex relative min-h-screen pt-16">
+        {!isLandingPage && <Sidebar />}
+        <MainContent>{children}</MainContent>
+      </div>
+    </>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   // Initialize theme from localStorage or default to dark
@@ -81,11 +95,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="bg-base-200 text-base-content">
         <ConvexProvider client={convex}>
           <SidebarProvider>
-            <Header />
-            <div className="flex relative min-h-screen pt-16">
-              <Sidebar />
-              <MainContent>{children}</MainContent>
-            </div>
+            <RootDocumentContent>{children}</RootDocumentContent>
           </SidebarProvider>
           <TanStackDevtools
             config={{
