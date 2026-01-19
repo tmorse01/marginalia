@@ -3,11 +3,11 @@ import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Folder, Trash2, Share2, Copy, Move, Edit, Plus, Home } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
-import { useCurrentUser } from '../lib/auth'
-import ShareDialog from './ShareDialog'
-import ConfirmDialog from './ConfirmDialog'
-import AlertToast from './AlertToast'
-import FolderPicker from './FolderPicker'
+import { useCurrentUser } from '../../lib/auth'
+import ShareDialog from '../ShareDialog'
+import ConfirmDialog from '../ConfirmDialog'
+import AlertToast from '../AlertToast'
+import FolderPicker from '../FolderPicker'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface FileTreeContextMenuProps {
@@ -376,4 +376,3 @@ export default function FileTreeContextMenu({
     </>
   )
 }
-

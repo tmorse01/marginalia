@@ -23,7 +23,7 @@ export default function Header() {
               <PanelLeft className="size-[1.2em]" strokeWidth={2.5} />
             </button>
           )}
-          <Link to="/" className="btn btn-ghost text-xl gap-2">
+          <Link to="/" className="text-xl gap-2 flex items-center">
             <Logo />
             Marginalia
           </Link>

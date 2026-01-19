@@ -6,6 +6,7 @@ export default defineSchema({
     name: v.string(),
     email: v.string(),
     createdAt: v.number(),
+    subscriptionTier: v.optional(v.string()), // e.g., "free", "premium", "enterprise" - determines feature access
   })
     .index("by_email", ["email"]),
 
@@ -109,5 +110,20 @@ export default defineSchema({
     updatedBy: v.optional(v.string()), // Store user identifier (email or tokenIdentifier)
   })
     .index("by_key", ["key"]),
+
+  aiConversations: defineTable({
+    noteId: v.id("notes"),
+    userId: v.id("users"),
+    messages: v.array(v.object({
+      role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
+      content: v.string(),
+      timestamp: v.number(),
+      suggestionId: v.optional(v.string()), // For linking suggestions to messages
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_note", ["noteId"])
+    .index("by_note_and_user", ["noteId", "userId"]),
 });
 

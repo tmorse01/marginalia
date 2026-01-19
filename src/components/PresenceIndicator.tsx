@@ -30,15 +30,6 @@ export default function PresenceIndicator({
     return null
   }
 
-  // Filter out current user
-  const otherUsers = activeUsers.filter(
-    (user) => user.userId !== currentUserId
-  )
-
-  if (otherUsers.length === 0) {
-    return null
-  }
-
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="flex items-center gap-2 text-base-content/70">
@@ -46,19 +37,22 @@ export default function PresenceIndicator({
         <span className="font-medium">Live now:</span>
       </span>
       <div className="flex flex-wrap gap-2">
-        {otherUsers.map((user) => (
-          <span
-            key={user.userId}
-            className={`badge gap-1 ${
-              user.mode === 'editing' ? 'badge-primary' : 'badge-ghost'
-            }`}
-          >
-            {user.user?.name || 'Anonymous'}
-            <span className="text-[10px] uppercase tracking-wide opacity-70">
-              {user.mode === 'editing' ? 'Editing' : 'Viewing'}
+        {activeUsers.map((user) => {
+          const isCurrentUser = user.userId === currentUserId
+          return (
+            <span
+              key={user.userId}
+              className={`badge gap-1 ${
+                user.mode === 'editing' ? 'badge-primary' : 'badge-ghost'
+              } ${isCurrentUser ? 'badge-outline' : ''}`}
+            >
+              {isCurrentUser ? 'You' : user.user?.name || 'Anonymous'}
+              <span className="text-[10px] uppercase tracking-wide opacity-70">
+                {user.mode === 'editing' ? 'Editing' : 'Viewing'}
+              </span>
             </span>
-          </span>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

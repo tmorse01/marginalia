@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSidebar } from '../lib/sidebar-context'
-import FileTree from './FileTree'
+import FileTree from './file-tree/FileTree'
 
 export default function Sidebar() {
   const { isCollapsed, setIsCollapsed, isLandingPage } = useSidebar()

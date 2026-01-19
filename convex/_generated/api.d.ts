@@ -9,6 +9,8 @@
  */
 
 import type * as activity from "../activity.js";
+import type * as ai from "../ai.js";
+import type * as aiConversations from "../aiConversations.js";
 import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
 import type * as featureFlags from "../featureFlags.js";
@@ -26,6 +28,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activity: typeof activity;
+  ai: typeof ai;
+  aiConversations: typeof aiConversations;
   auth: typeof auth;
   comments: typeof comments;
   featureFlags: typeof featureFlags;

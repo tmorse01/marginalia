@@ -42,7 +42,7 @@ export default function ActivityLog({ noteId }: ActivityLogProps) {
         return `${actorName} forked the note`
       case 'permission':
         return `${actorName} changed permissions`
-      case 'delete':
+      case 'delete': {
         const metadata = activity.metadata || {}
         if (metadata.isReply) {
           return `${actorName} deleted a reply`
@@ -51,6 +51,7 @@ export default function ActivityLog({ noteId }: ActivityLogProps) {
         } else {
           return `${actorName} deleted a comment`
         }
+      }
       default:
         return `${actorName} performed an action`
     }

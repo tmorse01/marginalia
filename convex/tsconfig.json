@@ -8,7 +8,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["convex/env"]
+    "types": ["convex/env", "node"]
   },
   "include": ["./**/*"]
 }

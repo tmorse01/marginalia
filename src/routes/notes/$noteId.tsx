@@ -5,7 +5,6 @@ import { api } from 'convex/_generated/api'
 import { HelpCircle } from 'lucide-react'
 import NoteEditor from '../../components/NoteEditor'
 import CommentableContent from '../../components/CommentableContent'
-import PresenceIndicator from '../../components/PresenceIndicator'
 import GeneralComments from '../../components/GeneralComments'
 import ShareDialog from '../../components/ShareDialog'
 import ActivityLog from '../../components/ActivityLog'
@@ -41,6 +40,7 @@ function NotePage() {
   const [selectedLine, setSelectedLine] = useState<number | null>(null)
   const [showSidebar, setShowSidebar] = useState(false)
   const [activeTab, setActiveTab] = useState<'comments' | 'ai' | 'metadata'>('comments')
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null)
 
   // Extract line comments and general comments from API response
   const lineComments = allComments?.byLine ?? {}
@@ -62,22 +62,37 @@ function NotePage() {
     }
   }, [note, isEditing])
 
-  // Debounced save
+  // Debounced save for content (only when editing)
   useEffect(() => {
     if (!isEditing || !note) return
 
     const timeoutId = setTimeout(() => {
-      if (title !== note.title || content !== note.content) {
+      if (content !== note.content) {
         updateNote({
           noteId: noteId as any,
-          title: title !== note.title ? title : undefined,
           content: content !== note.content ? content : undefined,
         })
       }
     }, 1000)
 
     return () => clearTimeout(timeoutId)
-  }, [title, content, isEditing, note, noteId, updateNote])
+  }, [content, isEditing, note, noteId, updateNote])
+
+  // Debounced save for title (independent of editing mode)
+  useEffect(() => {
+    if (!note) return
+
+    const timeoutId = setTimeout(() => {
+      if (title !== note.title) {
+        updateNote({
+          noteId: noteId as any,
+          title: title !== note.title ? title : undefined,
+        })
+      }
+    }, 1000)
+
+    return () => clearTimeout(timeoutId)
+  }, [title, note, noteId, updateNote])
 
   useNotePresence({
     noteId: noteId as any,
@@ -147,6 +162,10 @@ function NotePage() {
               }
             }}
             onShareClick={() => setShowShareDialog(true)}
+            onTitleChange={setTitle}
+            noteId={noteId as any}
+            currentUserId={currentUserId}
+            activeUsers={activeUsers ?? undefined}
           />
         </div>
       </div>
@@ -156,30 +175,6 @@ function NotePage() {
         {/* Main Content Area - fixed width to prevent layout shift */}
         <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 py-4 sm:px-4 sm:py-8 lg:px-6 w-full">
           <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden w-full">
-            {/* Title Section (when editing) */}
-            {isEditing && (
-              <div className="bg-base-200 border-b border-base-300 px-3 py-3 sm:px-6 sm:py-5">
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="input input-bordered w-full focus:border-primary focus:outline-none"
-                  placeholder="Note title"
-                />
-              </div>
-            )}
-
-            {/* Presence Indicator */}
-            {!isEditing && (
-              <div className="bg-base-200 border-b border-base-300 px-3 py-2 sm:px-6">
-                <PresenceIndicator
-                  noteId={noteId as any}
-                  currentUserId={currentUserId}
-                  activeUsers={activeUsers ?? undefined}
-                />
-              </div>
-            )}
-
             {/* Content Section */}
             <div className="card-body p-3 sm:p-6 w-full">
               {isEditing ? (
@@ -201,6 +196,22 @@ function NotePage() {
                     onCursorChange={(start, end) => {
                       setCursorStart(start)
                       setCursorEnd(end)
+                    }}
+                    suggestedContent={aiSuggestion || undefined}
+                    onApplySuggestion={() => {
+                      if (aiSuggestion) {
+                        setContent(aiSuggestion)
+                        setAiSuggestion(null)
+                        setTimeout(() => {
+                          updateNote({
+                            noteId: noteId as any,
+                            content: aiSuggestion,
+                          })
+                        }, 100)
+                      }
+                    }}
+                    onDismissSuggestion={() => {
+                      setAiSuggestion(null)
                     }}
                   />
                 </>
@@ -245,7 +256,7 @@ function NotePage() {
         </div>
 
         {/* Right Sidebar - scrolls with content */}
-        {showSidebar && !isEditing && (
+        {showSidebar && (
           <div className="w-80 shrink-0 px-4 py-4">
             <RightSidebar
               noteId={noteId as any}
@@ -259,6 +270,10 @@ function NotePage() {
               showAllComments={true}
               activeTab={activeTab}
               onTabChange={setActiveTab}
+              onApplyAISuggestion={(suggestion) => {
+                // Set suggestion to show inline diff in editor
+                setAiSuggestion(suggestion)
+              }}
             />
           </div>
         )}

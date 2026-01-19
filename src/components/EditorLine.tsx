@@ -29,6 +29,7 @@ interface EditorLineProps {
   onKeyDown?: (e: React.KeyboardEvent, lineIndex: number) => void
   onPaste?: (e: React.ClipboardEvent, lineIndex: number) => void
   className?: string
+  diffState?: 'added' | 'removed' // For inline diff highlighting
 }
 
 export default function EditorLine({
@@ -41,6 +42,7 @@ export default function EditorLine({
   onKeyDown,
   onPaste,
   className = '',
+  diffState,
 }: EditorLineProps) {
   const parsed: ParsedLine = useMemo(() => {
     const result = tokenizeLine(line)
@@ -77,12 +79,22 @@ export default function EditorLine({
     return renderLineContent(parsed, isFocused)
   }, [parsed, isFocused, lineIndex])
 
+  // Get diff styling classes
+  const getDiffClasses = () => {
+    if (diffState === 'removed') {
+      return 'bg-error/20 border-l-2 border-error opacity-75'
+    } else if (diffState === 'added') {
+      return 'bg-success/20 border-l-2 border-success'
+    }
+    return ''
+  }
+
   return (
     <div
       ref={editorHook.lineRef}
-      contentEditable={isFocused}
+      contentEditable={isFocused && lineIndex >= 0 && diffState !== 'added'} // Don't allow editing preview lines or added diff lines
       suppressContentEditableWarning
-      className={`editor-line ${isFocused ? 'editor-line-focused' : 'editor-line-rendered'} ${className}`}
+      className={`editor-line ${isFocused ? 'editor-line-focused' : 'editor-line-rendered'} ${getDiffClasses()} ${className}`}
       onInput={editorHook.handleInput}
       onCompositionStart={editorHook.handleCompositionStart}
       onCompositionEnd={editorHook.handleCompositionEnd}
@@ -95,10 +107,17 @@ export default function EditorLine({
         lineHeight: '1.5',
         outline: 'none',
         minHeight: '1.5em',
+        ...(diffState === 'added' ? { pointerEvents: 'none', userSelect: 'none' } : {}),
       }}
       data-is-focused={isFocused}
       data-line-index={lineIndex}
     >
+      {diffState === 'removed' && (
+        <span className="text-error/60 mr-2 select-none">-</span>
+      )}
+      {diffState === 'added' && (
+        <span className="text-success/60 mr-2 select-none">+</span>
+      )}
       {renderedContent}
     </div>
   )

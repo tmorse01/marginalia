@@ -18,9 +18,9 @@ import {
 } from '@dnd-kit/sortable'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus, Folder, FileText, Search, X } from 'lucide-react'
-import { useCurrentUser } from '../lib/auth'
+import { useCurrentUser } from '../../lib/auth'
+import AlertToast from '../AlertToast'
 import FileTreeItem from './FileTreeItem'
-import AlertToast from './AlertToast'
 import type {
   DragEndEvent,
   DragStartEvent,
@@ -706,7 +706,7 @@ export default function FileTree() {
             </div>
           </div>
         </div>
-        <div className="overflow-y-auto flex-1 min-h-0 relative">
+        <div className="overflow-y-auto flex-1 min-h-0 relative px-1 py-0.5">
           <RootDropZone activeId={activeId} />
           {/* Root highlight line - shows when dragging over root area (empty space or root drop zone) */}
           {activeId && isOverRoot && (
@@ -743,4 +743,3 @@ export default function FileTree() {
     </DndContext>
   )
 }
-

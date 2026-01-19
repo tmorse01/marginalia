@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useQuery, useMutation } from 'convex/react'
-import FileTree from '../FileTree'
+import FileTree from '../file-tree/FileTree'
 
 // Mock Convex hooks
 vi.mock('convex/react', () => ({

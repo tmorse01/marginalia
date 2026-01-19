@@ -48,6 +48,7 @@ interface RightSidebarProps {
   showAllComments?: boolean
   activeTab?: 'comments' | 'ai' | 'metadata'
   onTabChange?: (tab: 'comments' | 'ai' | 'metadata') => void
+  onApplyAISuggestion?: (suggestion: string) => void
 }
 
 export default function RightSidebar({
@@ -62,6 +63,7 @@ export default function RightSidebar({
   showAllComments = false,
   activeTab: controlledActiveTab,
   onTabChange,
+  onApplyAISuggestion,
 }: RightSidebarProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<'comments' | 'ai' | 'metadata'>('comments')
   
@@ -92,7 +94,14 @@ export default function RightSidebar({
             showAllComments={showAllComments}
           />
         )}
-        {activeTab === 'ai' && <AIChatPanel noteId={noteId} />}
+        {activeTab === 'ai' && (
+          <AIChatPanel
+            noteId={noteId}
+            noteContent={content}
+            noteTitle={note?.title || 'Untitled Note'}
+            onApplySuggestion={onApplyAISuggestion}
+          />
+        )}
         {activeTab === 'metadata' && (
           note ? (
             <NoteMetadataPanel note={note} content={content} />

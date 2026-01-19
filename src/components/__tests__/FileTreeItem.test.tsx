@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import FileTreeItem from '../FileTreeItem'
+import FileTreeItem from '../file-tree/FileTreeItem'
 
 // Mock router
 vi.mock('@tanstack/react-router', () => ({
@@ -43,7 +43,7 @@ vi.mock('@dnd-kit/utilities', () => ({
 }))
 
 // Mock FileTreeContextMenu
-vi.mock('../FileTreeContextMenu', () => ({
+vi.mock('../file-tree/FileTreeContextMenu', () => ({
   default: () => null,
 }))
 
