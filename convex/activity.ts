@@ -9,7 +9,8 @@ export const log = mutation({
       v.literal("comment"),
       v.literal("resolve"),
       v.literal("fork"),
-      v.literal("permission")
+      v.literal("permission"),
+      v.literal("delete")
     ),
     actorId: v.id("users"),
     metadata: v.optional(v.any()),

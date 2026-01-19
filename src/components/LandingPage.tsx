@@ -1,17 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { FileText, Users, MessageSquare, Share2, Zap } from 'lucide-react'
-import { useEffect } from 'react'
-import { useSidebar } from '../lib/sidebar-context'
 import Logo from './Logo'
 
 export default function LandingPage() {
-  const { setIsLandingPage } = useSidebar()
-
-  useEffect(() => {
-    setIsLandingPage(true)
-    return () => setIsLandingPage(false)
-  }, [setIsLandingPage])
-
   return (
     <div className="flex flex-col -mx-4 -my-8">
       {/* Hero Section */}
@@ -20,7 +11,7 @@ export default function LandingPage() {
           <div className="flex justify-center mb-8">
             <Logo className="w-16 h-16" />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 pb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 pb-2 brand-primary">
             Marginalia
           </h1>
           <p className="text-xl md:text-2xl text-base-content/70 mb-4 max-w-2xl mx-auto">
@@ -119,7 +110,7 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <div className="card bg-base-100 shadow-md border border-base-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
       <div className="card-body">
-        <div className="text-primary mb-4 transition-transform duration-300 group-hover:scale-110">{icon}</div>
+        <div className="brand-primary mb-4 transition-transform duration-300 group-hover:scale-110">{icon}</div>
         <h3 className="card-title text-xl mb-2">{title}</h3>
         <p className="text-base-content/70">{description}</p>
       </div>

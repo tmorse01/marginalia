@@ -9,6 +9,55 @@
   --font-mono: "JetBrains Mono", "Fira Code", "IBM Plex Mono", "Source Code Pro", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
+/* Branding theme - separate from DaisyUI themes */
+:root {
+  /* Brand colors - these remain consistent across all DaisyUI themes */
+  --brand-primary: 220 90% 56%; /* Blue */
+  --brand-primary-dark: 220 90% 48%;
+  --brand-primary-light: 220 90% 65%;
+  --brand-accent: 280 60% 55%; /* Purple accent */
+  --brand-text: 220 15% 20%; /* Dark text for light themes */
+  --brand-text-light: 220 10% 50%; /* Lighter text */
+}
+
+/* Brand color utilities */
+.brand-primary {
+  color: hsl(var(--brand-primary));
+}
+
+.brand-primary-bg {
+  background-color: hsl(var(--brand-primary));
+}
+
+.brand-accent {
+  color: hsl(var(--brand-accent));
+}
+
+.brand-accent-bg {
+  background-color: hsl(var(--brand-accent));
+}
+
+/* Adjust brand text color based on theme */
+[data-theme="dark"],
+[data-theme="night"],
+[data-theme="dracula"],
+[data-theme="synthwave"],
+[data-theme="cyberpunk"],
+[data-theme="black"] {
+  --brand-text: 220 20% 90%;
+  --brand-text-light: 220 15% 70%;
+}
+
+/* For light themes, use darker brand text */
+[data-theme="light"],
+[data-theme="garden"],
+[data-theme="pastel"],
+[data-theme="lofi"],
+[data-theme="aqua"] {
+  --brand-text: 220 15% 20%;
+  --brand-text-light: 220 10% 50%;
+}
+
 body {
   @apply m-0;
   font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",

@@ -27,7 +27,7 @@ import type {
   DragOverEvent} from '@dnd-kit/core';
 import type { Id } from 'convex/_generated/dataModel'
 
-// Root drop zone - invisible but captures drops at the top of the tree
+// Root drop zone - covers the entire scrollable area to catch drops in empty space
 function RootDropZone({ activeId }: { activeId: string | null }) {
   const { setNodeRef } = useDroppable({
     id: 'root-drop-zone',
@@ -36,10 +36,12 @@ function RootDropZone({ activeId }: { activeId: string | null }) {
 
   if (!activeId) return null
 
+  // Cover entire area - this will catch drops when not over any folder/item
   return (
     <div
       ref={setNodeRef}
-      className="absolute top-0 left-0 right-0 h-4 z-10"
+      className="absolute inset-0 z-0"
+      style={{ pointerEvents: 'auto' }}
     />
   )
 }
@@ -338,11 +340,22 @@ export default function FileTree() {
     if (event.over) {
       const overIdStr = event.over.id as string
       setOverId(overIdStr)
+      // Show root highlight if over root drop zone
       setIsOverRoot(overIdStr === 'root-drop-zone')
     } else {
+      // If not over any item (dragging over empty space), show root highlight
       setOverId(null)
-      setIsOverRoot(false)
+      setIsOverRoot(true)
     }
+  }
+
+  // Also handle when drag leaves all items - show root highlight
+  const handleDragCancel = () => {
+    setActiveId(null)
+    setActiveItemName(null)
+    setActiveItemType(null)
+    setOverId(null)
+    setIsOverRoot(false)
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -353,7 +366,47 @@ export default function FileTree() {
     setOverId(null)
     setIsOverRoot(false)
 
-    if (!over || active.id === over.id) return
+    if (!over || active.id === over.id) {
+      // If dropped on nothing (empty space), move to root
+      if (over === null && active.id) {
+        const draggedId = active.id as string
+        const findNode = (id: string, nodes: Array<TreeNode>): TreeNode | null => {
+          for (const node of nodes) {
+            if (node.id === id) return node
+            if (node.children) {
+              const found = findNode(id, node.children)
+              if (found) return found
+            }
+          }
+          return null
+        }
+
+        const activeNode = findNode(draggedId, tree)
+        if (!activeNode || !activeNode.parentId) return
+
+        const activeType = draggedId.startsWith('folder-') ? 'folder' : 'note'
+
+        try {
+          if (activeType === 'note' && activeNode.noteId) {
+            await moveNote({
+              noteId: activeNode.noteId,
+              folderId: undefined,
+            })
+          } else if (activeType === 'folder' && activeNode.folderId) {
+            await moveFolder({
+              folderId: activeNode.folderId,
+              newParentId: undefined,
+            })
+          }
+        } catch (error) {
+          console.error('Failed to move to root:', error)
+          setAlertMessage('Failed to move to root. Please try again.')
+          setAlertType('error')
+          setShowAlert(true)
+        }
+      }
+      return
+    }
 
     const draggedId = active.id as string
     const targetId = over.id as string
@@ -608,6 +661,7 @@ export default function FileTree() {
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       <div className="file-tree">
         <div className="border-b border-base-300">
@@ -654,7 +708,7 @@ export default function FileTree() {
         </div>
         <div className="overflow-y-auto flex-1 min-h-0 relative">
           <RootDropZone activeId={activeId} />
-          {/* Root highlight line - shows when dragging over root area */}
+          {/* Root highlight line - shows when dragging over root area (empty space or root drop zone) */}
           {activeId && isOverRoot && (
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary z-20 shadow-sm" />
           )}

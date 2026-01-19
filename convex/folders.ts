@@ -215,3 +215,65 @@ export const getPath = query({
   },
 });
 
+export const getContents = query({
+  args: { folderId: v.id("folders"), userId: v.id("users") },
+  handler: async (ctx, args) => {
+    // Get subfolders
+    const subfolders = await ctx.db
+      .query("folders")
+      .withIndex("by_parent", (q) => q.eq("parentId", args.folderId))
+      .collect();
+
+    // Filter to only folders owned by the user
+    const userSubfolders = subfolders.filter((f) => f.ownerId === args.userId);
+    const sortedSubfolders = userSubfolders.sort((a, b) => a.order - b.order);
+
+    // Get notes in this folder
+    const notes = await ctx.db
+      .query("notes")
+      .withIndex("by_folder", (q) => q.eq("folderId", args.folderId))
+      .collect();
+
+    // Filter notes the user has access to
+    // Get notes where user is owner
+    const ownedNotes = notes.filter((n) => n.ownerId === args.userId);
+
+    // Get notes where user has permissions
+    const permissionedNotes = await ctx.db
+      .query("notePermissions")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const permissionedNoteIds = new Set(
+      permissionedNotes.map((p) => p.noteId)
+    );
+
+    const sharedNotes = notes.filter((n) => permissionedNoteIds.has(n._id));
+
+    // Combine and deduplicate
+    const allNotes = [
+      ...ownedNotes,
+      ...sharedNotes,
+    ];
+
+    const uniqueNotes = Array.from(
+      new Map(allNotes.map((n) => [n._id, n])).values()
+    );
+
+    // Sort notes by order, then by updatedAt
+    const sortedNotes = uniqueNotes.sort((a, b) => {
+      const orderA = a.order ?? 0;
+      const orderB = b.order ?? 0;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return b.updatedAt - a.updatedAt;
+    });
+
+    return {
+      folders: sortedSubfolders,
+      notes: sortedNotes,
+    };
+  },
+});
+

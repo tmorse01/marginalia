@@ -3,8 +3,13 @@ import { useSidebar } from '../lib/sidebar-context'
 import FileTree from './FileTree'
 
 export default function Sidebar() {
-  const { isCollapsed, setIsCollapsed } = useSidebar()
+  const { isCollapsed, setIsCollapsed, isLandingPage } = useSidebar()
   const [isMobile, setIsMobile] = useState(false)
+
+  // Don't render sidebar on landing page
+  if (isLandingPage) {
+    return null
+  }
 
   // Check if mobile
   useEffect(() => {

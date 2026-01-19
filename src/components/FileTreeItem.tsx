@@ -234,7 +234,10 @@ export default function FileTreeItem({
           (isDroppableOver || isOver) && type === 'folder' ? 'bg-primary/10 ring-2 ring-primary' : ''
         }`}
         onContextMenu={handleContextMenu}
-        onClick={() => onSelect?.()}
+        onClick={() => {
+          // Only handle selection, not expand/collapse (that's handled by the button)
+          onSelect?.()
+        }}
         onDoubleClick={handleDoubleClick}
       >
         {type === 'folder' ? (
@@ -291,10 +294,20 @@ export default function FileTreeItem({
           >
             {highlightText(name, searchQuery)}
           </Link>
+        ) : type === 'folder' && folderId ? (
+          <Link
+            {...({ to: "/folders/$folderId", params: { folderId } } as any)}
+            className="flex-1 min-w-0 truncate text-sm font-medium"
+            onClick={(e) => {
+              // Stop propagation so clicking the folder name doesn't trigger expand/collapse
+              e.stopPropagation()
+            }}
+          >
+            {highlightText(name, searchQuery)}
+          </Link>
         ) : (
           <span
             className="flex-1 min-w-0 truncate text-sm font-medium"
-            onClick={type === 'folder' ? handleExpandClick : undefined}
           >
             {highlightText(name, searchQuery)}
           </span>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import {
   MessageCircle,
@@ -13,6 +13,7 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
+import AlertToast from './AlertToast'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface CommentData {
@@ -54,6 +55,10 @@ export default function GeneralComments({
   const resolveComment = useMutation(api.comments.resolve)
   const updateComment = useMutation(api.comments.update)
   const deleteComment = useMutation(api.comments.remove)
+  const userPermission = useQuery(
+    api.permissions.check,
+    currentUserId ? { noteId, userId: currentUserId } : 'skip'
+  )
 
   const [isExpanded, setIsExpanded] = useState(true)
   const [newComment, setNewComment] = useState('')
@@ -62,6 +67,8 @@ export default function GeneralComments({
   const [editingId, setEditingId] = useState<Id<'comments'> | null>(null)
   const [editText, setEditText] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState<Id<'comments'> | null>(null)
+  const [showErrorToast, setShowErrorToast] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleCreate = async () => {
     if (!newComment.trim() || !currentUserId) return
@@ -124,14 +131,26 @@ export default function GeneralComments({
       setShowDeleteDialog(null)
     } catch (error) {
       console.error('Failed to delete:', error)
+      const message = error instanceof Error ? error.message : 'Failed to delete comment'
+      if (message.includes("don't have permission") || message.includes('permission')) {
+        setErrorMessage("You can't delete this comment. Only the comment author, note owner, or editors can delete comments.")
+      } else {
+        setErrorMessage(message)
+      }
+      setShowErrorToast(true)
     }
   }
 
   const canResolve = (c: CommentData) =>
     currentUserId && (c.authorId === currentUserId || noteOwnerId === currentUserId)
   const canEdit = (c: CommentData) => currentUserId && c.authorId === currentUserId
-  const canDelete = (c: CommentData) =>
-    currentUserId && (c.authorId === currentUserId || noteOwnerId === currentUserId)
+  const canDelete = (c: CommentData) => {
+    if (!currentUserId) return false
+    const isAuthor = c.authorId === currentUserId
+    const isOwner = noteOwnerId === currentUserId
+    const isEditor = userPermission?.role === 'editor' || userPermission?.role === 'owner'
+    return isAuthor || isOwner || isEditor
+  }
 
   const unresolvedCount = threads.filter((t) => !t.resolved).length
 
@@ -337,6 +356,13 @@ export default function GeneralComments({
         confirmButtonClass="btn-error"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setShowDeleteDialog(null)}
+      />
+
+      <AlertToast
+        isOpen={showErrorToast}
+        message={errorMessage}
+        type="error"
+        onClose={() => setShowErrorToast(false)}
       />
     </div>
   )

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import { HelpCircle } from 'lucide-react'
 import NoteEditor from '../../components/NoteEditor'
 import CommentableContent from '../../components/CommentableContent'
 import PresenceIndicator from '../../components/PresenceIndicator'
@@ -11,6 +12,7 @@ import ActivityLog from '../../components/ActivityLog'
 import LiveCursorOverlay from '../../components/LiveCursorOverlay'
 import RightSidebar from '../../components/RightSidebar'
 import NotePageHeader from '../../components/NotePageHeader'
+import MarkdownCheatSheetModal from '../../components/MarkdownCheatSheetModal'
 import { useCurrentUser } from '../../lib/auth'
 import { useNotePresence } from '../../lib/presence'
 
@@ -33,6 +35,7 @@ function NotePage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [showCheatSheet, setShowCheatSheet] = useState(false)
   const [cursorStart, setCursorStart] = useState<number | undefined>(undefined)
   const [cursorEnd, setCursorEnd] = useState<number | undefined>(undefined)
   const [selectedLine, setSelectedLine] = useState<number | null>(null)
@@ -180,15 +183,27 @@ function NotePage() {
             {/* Content Section */}
             <div className="card-body p-3 sm:p-6 w-full">
               {isEditing ? (
-                <NoteEditor
-                  content={content}
-                  onChange={setContent}
-                  placeholder="Start writing in Markdown..."
-                  onCursorChange={(start, end) => {
-                    setCursorStart(start)
-                    setCursorEnd(end)
-                  }}
-                />
+                <>
+                  <div className="flex justify-end mb-3">
+                    <button
+                      onClick={() => setShowCheatSheet(true)}
+                      className="btn btn-sm btn-ghost tooltip tooltip-bottom"
+                      data-tip="Markdown Cheat Sheet"
+                    >
+                      <HelpCircle size={18} />
+                      <span className="hidden sm:inline ml-2">Markdown Help</span>
+                    </button>
+                  </div>
+                  <NoteEditor
+                    content={content}
+                    onChange={setContent}
+                    placeholder="Start writing in Markdown..."
+                    onCursorChange={(start, end) => {
+                      setCursorStart(start)
+                      setCursorEnd(end)
+                    }}
+                  />
+                </>
               ) : (
                 <>
                   <LiveCursorOverlay
@@ -253,6 +268,10 @@ function NotePage() {
         noteId={noteId as any}
         isOpen={showShareDialog}
         onClose={() => setShowShareDialog(false)}
+      />
+      <MarkdownCheatSheetModal
+        isOpen={showCheatSheet}
+        onClose={() => setShowCheatSheet(false)}
       />
     </div>
   )

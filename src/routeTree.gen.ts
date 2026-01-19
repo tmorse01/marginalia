@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PublicNoteIdRouteImport } from './routes/public/$noteId'
 import { Route as NotesNewRouteImport } from './routes/notes/new'
 import { Route as NotesNoteIdRouteImport } from './routes/notes/$noteId'
+import { Route as FoldersFolderIdRouteImport } from './routes/folders/$folderId'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
@@ -51,6 +52,11 @@ const NotesNewRoute = NotesNewRouteImport.update({
 const NotesNoteIdRoute = NotesNoteIdRouteImport.update({
   id: '/notes/$noteId',
   path: '/notes/$noteId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FoldersFolderIdRoute = FoldersFolderIdRouteImport.update({
+  id: '/folders/$folderId',
+  path: '/folders/$folderId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/settings': typeof SettingsRoute
+  '/folders/$folderId': typeof FoldersFolderIdRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/notes/new': typeof NotesNewRoute
   '/public/$noteId': typeof PublicNoteIdRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/settings': typeof SettingsRoute
+  '/folders/$folderId': typeof FoldersFolderIdRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/notes/new': typeof NotesNewRoute
   '/public/$noteId': typeof PublicNoteIdRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/settings': typeof SettingsRoute
+  '/folders/$folderId': typeof FoldersFolderIdRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/notes/new': typeof NotesNewRoute
   '/public/$noteId': typeof PublicNoteIdRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/settings'
+    | '/folders/$folderId'
     | '/notes/$noteId'
     | '/notes/new'
     | '/public/$noteId'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/settings'
+    | '/folders/$folderId'
     | '/notes/$noteId'
     | '/notes/new'
     | '/public/$noteId'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/settings'
+    | '/folders/$folderId'
     | '/notes/$noteId'
     | '/notes/new'
     | '/public/$noteId'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LandingRoute: typeof LandingRoute
   SettingsRoute: typeof SettingsRoute
+  FoldersFolderIdRoute: typeof FoldersFolderIdRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
   NotesNewRoute: typeof NotesNewRoute
   PublicNoteIdRoute: typeof PublicNoteIdRoute
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/notes/$noteId'
       fullPath: '/notes/$noteId'
       preLoaderRoute: typeof NotesNoteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/folders/$folderId': {
+      id: '/folders/$folderId'
+      path: '/folders/$folderId'
+      fullPath: '/folders/$folderId'
+      preLoaderRoute: typeof FoldersFolderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/start/server-funcs': {
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LandingRoute: LandingRoute,
   SettingsRoute: SettingsRoute,
+  FoldersFolderIdRoute: FoldersFolderIdRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
   NotesNewRoute: NotesNewRoute,
   PublicNoteIdRoute: PublicNoteIdRoute,

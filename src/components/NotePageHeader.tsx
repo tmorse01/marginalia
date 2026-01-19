@@ -60,7 +60,7 @@ export default function NotePageHeader({
               <div key={folder._id} className="flex items-center gap-2">
                 <ChevronRight size={14} className="text-base-content/40" />
                 <Link
-                  to="/"
+                  {...({ to: "/folders/$folderId", params: { folderId: folder._id } } as any)}
                   className="text-base-content/70 hover:text-primary transition-colors"
                 >
                   {folder.name}

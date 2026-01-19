@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import {
   X,
@@ -11,6 +11,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
+import AlertToast from './AlertToast'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface CommentData {
@@ -60,6 +61,10 @@ export default function InlineCommentsPanel({
   const resolveComment = useMutation(api.comments.resolve)
   const updateComment = useMutation(api.comments.update)
   const deleteComment = useMutation(api.comments.remove)
+  const userPermission = useQuery(
+    api.permissions.check,
+    currentUserId ? { noteId, userId: currentUserId } : 'skip'
+  )
 
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState<Id<'comments'> | null>(null)
@@ -67,6 +72,8 @@ export default function InlineCommentsPanel({
   const [editingId, setEditingId] = useState<Id<'comments'> | null>(null)
   const [editText, setEditText] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState<Id<'comments'> | null>(null)
+  const [showErrorToast, setShowErrorToast] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const commentInputRef = useRef<HTMLInputElement>(null)
 
   // Auto-focus input when a line is selected
@@ -150,14 +157,26 @@ export default function InlineCommentsPanel({
       setShowDeleteDialog(null)
     } catch (error) {
       console.error('Failed to delete:', error)
+      const message = error instanceof Error ? error.message : 'Failed to delete comment'
+      if (message.includes("don't have permission") || message.includes('permission')) {
+        setErrorMessage("You can't delete this comment. Only the comment author, note owner, or editors can delete comments.")
+      } else {
+        setErrorMessage(message)
+      }
+      setShowErrorToast(true)
     }
   }
 
   const canResolve = (c: CommentData) =>
     currentUserId && (c.authorId === currentUserId || noteOwnerId === currentUserId)
   const canEdit = (c: CommentData) => currentUserId && c.authorId === currentUserId
-  const canDelete = (c: CommentData) =>
-    currentUserId && (c.authorId === currentUserId || noteOwnerId === currentUserId)
+  const canDelete = (c: CommentData) => {
+    if (!currentUserId) return false
+    const isAuthor = c.authorId === currentUserId
+    const isOwner = noteOwnerId === currentUserId
+    const isEditor = userPermission?.role === 'editor' || userPermission?.role === 'owner'
+    return isAuthor || isOwner || isEditor
+  }
 
   const renderComment = (comment: CommentData, isReply = false) => {
     const isEditing = editingId === comment._id
@@ -330,9 +349,11 @@ export default function InlineCommentsPanel({
 
                     {/* Line content preview */}
                     <div className="px-2 py-1 bg-base-300/30 rounded text-xs mb-2">
-                      <code className="text-base-content/70 break-all line-clamp-2">
-                        {lineContent || '(empty line)'}
-                      </code>
+                      <pre className="text-base-content/70 whitespace-pre-wrap break-words overflow-x-auto font-mono text-xs m-0">
+                        <code className="text-base-content/70">
+                          {lineContent || '(empty line)'}
+                        </code>
+                      </pre>
                     </div>
 
                     {/* Drift warning */}
@@ -368,6 +389,24 @@ export default function InlineCommentsPanel({
             })
           )}
         </div>
+
+        <ConfirmDialog
+          isOpen={showDeleteDialog !== null}
+          title="Delete Comment"
+          message="Are you sure you want to delete this comment? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmButtonClass="btn-error"
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setShowDeleteDialog(null)}
+        />
+
+        <AlertToast
+          isOpen={showErrorToast}
+          message={errorMessage}
+          type="error"
+          onClose={() => setShowErrorToast(false)}
+        />
       </div>
     )
     }
@@ -401,9 +440,11 @@ export default function InlineCommentsPanel({
 
       {/* Line content preview */}
       <div className="px-4 py-2 bg-base-300/30 border-b border-base-300">
-        <code className="text-xs text-base-content/70 break-all line-clamp-2">
-          {currentLineContent || '(empty line)'}
-        </code>
+        <pre className="text-base-content/70 whitespace-pre-wrap break-words overflow-x-auto font-mono text-xs m-0">
+          <code className="text-base-content/70">
+            {currentLineContent || '(empty line)'}
+          </code>
+        </pre>
       </div>
 
       {/* Drift warning */}
@@ -478,6 +519,13 @@ export default function InlineCommentsPanel({
         confirmButtonClass="btn-error"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setShowDeleteDialog(null)}
+      />
+
+      <AlertToast
+        isOpen={showErrorToast}
+        message={errorMessage}
+        type="error"
+        onClose={() => setShowErrorToast(false)}
       />
     </div>
   )

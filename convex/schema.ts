@@ -80,7 +80,8 @@ export default defineSchema({
       v.literal("comment"),
       v.literal("resolve"),
       v.literal("fork"),
-      v.literal("permission")
+      v.literal("permission"),
+      v.literal("delete")
     ),
     actorId: v.id("users"),
     metadata: v.any(), // flexible metadata for different event types

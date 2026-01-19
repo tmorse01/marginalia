@@ -1,6 +1,6 @@
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { CheckCircle, Clock, Edit, GitBranch, MessageSquare, Shield } from 'lucide-react'
+import { CheckCircle, Clock, Edit, GitBranch, MessageSquare, Shield, Trash2 } from 'lucide-react'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface ActivityLogProps {
@@ -22,6 +22,8 @@ export default function ActivityLog({ noteId }: ActivityLogProps) {
         return <GitBranch size={16} />
       case 'permission':
         return <Shield size={16} />
+      case 'delete':
+        return <Trash2 size={16} />
       default:
         return <Clock size={16} />
     }
@@ -40,6 +42,15 @@ export default function ActivityLog({ noteId }: ActivityLogProps) {
         return `${actorName} forked the note`
       case 'permission':
         return `${actorName} changed permissions`
+      case 'delete':
+        const metadata = activity.metadata || {}
+        if (metadata.isReply) {
+          return `${actorName} deleted a reply`
+        } else if (metadata.replyCount > 0) {
+          return `${actorName} deleted a comment and ${metadata.replyCount} ${metadata.replyCount === 1 ? 'reply' : 'replies'}`
+        } else {
+          return `${actorName} deleted a comment`
+        }
       default:
         return `${actorName} performed an action`
     }

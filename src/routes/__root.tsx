@@ -1,13 +1,12 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { ConvexProvider } from 'convex/react'
 import { useEffect } from 'react'
 
-import Header from '../components/Header'
-import Sidebar from '../components/Sidebar'
-import MainContent from '../components/MainContent'
-import { SidebarProvider, useSidebar } from '../lib/sidebar-context'
+import AppLayout from '../components/AppLayout'
+import LandingLayout from '../components/LandingLayout'
+import { SidebarProvider } from '../lib/sidebar-context'
 import { convex } from '../lib/convex'
 
 import appCss from '../styles.css?url'
@@ -43,17 +42,16 @@ export const Route = createRootRoute({
 })
 
 function RootDocumentContent({ children }: { children: React.ReactNode }) {
-  const { isLandingPage } = useSidebar()
+  const location = useLocation()
+  const isLandingRoute = location.pathname === '/landing'
 
-  return (
-    <>
-      <Header />
-      <div className="flex relative min-h-screen pt-16">
-        {!isLandingPage && <Sidebar />}
-        <MainContent>{children}</MainContent>
-      </div>
-    </>
-  )
+  // Use landing layout for /landing route, app layout for everything else
+  // Note: When index route shows landing page, it uses app layout but sidebar won't render
+  if (isLandingRoute) {
+    return <LandingLayout>{children}</LandingLayout>
+  }
+
+  return <AppLayout>{children}</AppLayout>
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {

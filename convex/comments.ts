@@ -259,17 +259,41 @@ export const remove = mutation({
       throw new Error("You don't have permission to delete this comment");
     }
 
-    // If this is a parent comment, also delete all replies
+    // Get note content for determining if it's a general comment
+    const note = await ctx.db.get(comment.noteId);
+    const noteContent = note?.content || "";
+    const isGeneralComment = comment.lineNumber === undefined;
+    const effectiveLineNumber = getEffectiveLineNumber(comment, noteContent);
+
+    // Count replies before deletion (for logging)
+    let replyCount = 0;
     if (!comment.parentId) {
       const replies = await ctx.db
         .query("comments")
         .withIndex("by_parent", (q) => q.eq("parentId", args.commentId))
         .collect();
+      replyCount = replies.length;
 
+      // Delete all replies
       for (const replyComment of replies) {
         await ctx.db.delete(replyComment._id);
       }
     }
+
+    // Log activity before deletion
+    await ctx.db.insert("activityEvents", {
+      noteId: comment.noteId,
+      type: "delete",
+      actorId: args.userId,
+      metadata: {
+        lineNumber: effectiveLineNumber,
+        commentId: args.commentId,
+        isGeneral: isGeneralComment,
+        isReply: !!comment.parentId,
+        replyCount: replyCount,
+      },
+      createdAt: Date.now(),
+    });
 
     await ctx.db.delete(args.commentId);
   },

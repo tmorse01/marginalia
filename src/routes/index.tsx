@@ -2,7 +2,9 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Plus } from 'lucide-react'
+import { useEffect } from 'react'
 import { useCurrentUser } from '../lib/auth'
+import { useSidebar } from '../lib/sidebar-context'
 import LandingPage from '../components/LandingPage'
 
 export const Route = createFileRoute('/')({
@@ -15,6 +17,16 @@ function HomePage() {
     api.notes.listUserNotes,
     userId ? { userId } : 'skip'
   )
+  const { setIsLandingPage } = useSidebar()
+
+  // Set landing page flag when showing landing page
+  useEffect(() => {
+    if (notes !== undefined && notes.length === 0) {
+      setIsLandingPage(true)
+      return () => setIsLandingPage(false)
+    }
+    return () => setIsLandingPage(false)
+  }, [notes, setIsLandingPage])
 
   // Show loading state while user is being created/fetched
   if (userId === undefined) {
@@ -29,7 +41,12 @@ function HomePage() {
 
   // Show landing page for first-time users (no notes yet)
   if (notes !== undefined && notes.length === 0) {
-    return <LandingPage />
+    // Use a wrapper that removes the MainContent padding to match landing layout
+    return (
+      <div className="-mx-4 -my-8">
+        <LandingPage />
+      </div>
+    )
   }
 
   // Show notes dashboard for users with existing notes
