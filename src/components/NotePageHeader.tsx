@@ -3,8 +3,8 @@ import { Link } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Edit, Eye, Share2, MessageSquare, Home, ChevronRight, Bot, Info } from 'lucide-react'
-import type { Id } from 'convex/_generated/dataModel'
 import PresenceIndicator from './PresenceIndicator'
+import type { Id } from 'convex/_generated/dataModel'
 
 interface NoteData {
   _id: Id<'notes'>

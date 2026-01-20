@@ -1,39 +1,79 @@
-import { useMutation, useQuery } from 'convex/react'
-import { useEffect, useRef } from 'react'
+import { useMutation, useQuery, useAction, useConvexAuth } from 'convex/react'
+import { useEffect, useRef, useState } from 'react'
+import { useAuthActions } from '@convex-dev/auth/react'
 import { api } from 'convex/_generated/api'
 import type { Id } from 'convex/_generated/dataModel'
 
+const TEST_USER_EMAIL = 'test@example.com'
+const IS_DEV = import.meta.env.DEV
+
 /**
- * Development helper to get or create a test user
- * TODO: Replace with proper authentication
+ * Get the current authenticated user ID
+ * In development mode, falls back to test user with premium subscription
+ * In production, uses Convex Auth
  */
 export function useCurrentUser(): Id<'users'> | undefined {
-  // For development, we'll use a hardcoded test email
-  // In production, this would come from Convex Auth
-  const testEmail = 'test@example.com'
-  const testName = 'Test User'
-  const hasCreatedUser = useRef(false)
-
-  const existingUser = useQuery(api.users.getByEmail, { email: testEmail })
-  const createUser = useMutation(api.users.create)
-
-  // Create user if it doesn't exist (only once)
+  const { isAuthenticated, isLoading: authLoading } = useConvexAuth()
+  
+  // In production, get user ID from authenticated identity
+  const authenticatedUserIdAction = useAction(api.auth.getCurrentUserId)
+  const [authenticatedUserId, setAuthenticatedUserId] = useState<Id<'users'> | null | undefined>(undefined)
+  const hasFetchedUserId = useRef(false)
+  
   useEffect(() => {
-    if (existingUser === null && !hasCreatedUser.current) {
-      hasCreatedUser.current = true
-      createUser({ name: testName, email: testEmail }).catch((error) => {
-        console.error('Failed to create user:', error)
-        hasCreatedUser.current = false // Allow retry on error
+    if (!IS_DEV && isAuthenticated && !hasFetchedUserId.current) {
+      hasFetchedUserId.current = true
+      authenticatedUserIdAction()
+        .then((userId) => {
+          setAuthenticatedUserId(userId)
+          hasFetchedUserId.current = false // Allow refetch if identity changes
+        })
+        .catch(() => {
+          setAuthenticatedUserId(null)
+          hasFetchedUserId.current = false
+        })
+    } else if (!IS_DEV && !isAuthenticated && !authLoading) {
+      setAuthenticatedUserId(null)
+      hasFetchedUserId.current = false
+    }
+  }, [IS_DEV, isAuthenticated, authLoading, authenticatedUserIdAction])
+
+  // Development mode: use test user
+  const testUser = useQuery(api.users.getByEmail, 
+    IS_DEV ? { email: TEST_USER_EMAIL } : 'skip'
+  )
+  const createTestUser = useMutation(api.users.getOrCreateTestUser)
+  const hasCreatedTestUser = useRef(false)
+
+  // In development, ensure test user exists and is premium
+  useEffect(() => {
+    if (IS_DEV && testUser === null && !hasCreatedTestUser.current) {
+      hasCreatedTestUser.current = true
+      createTestUser().catch((error) => {
+        console.error('Failed to create test user:', error)
+        hasCreatedTestUser.current = false // Allow retry on error
       })
     }
-  }, [existingUser, createUser, testName, testEmail])
+  }, [IS_DEV, testUser, createTestUser])
 
-  // If user exists, return its ID
-  if (existingUser) {
-    return existingUser._id
+  // In production, use authenticated user
+  if (!IS_DEV) {
+    if (authLoading || authenticatedUserId === undefined) {
+      return undefined // Still loading auth state
+    }
+    return authenticatedUserId ?? undefined
   }
 
-  // Still loading or creating
+  // In development, use test user (with premium subscription)
+  if (testUser) {
+    return testUser._id
+  }
+
+  // Still loading or creating test user
   return undefined
 }
 
+/**
+ * Get auth actions for sign in/out
+ */
+export { useAuthActions }

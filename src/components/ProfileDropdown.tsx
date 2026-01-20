@@ -1,8 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
-import { User } from 'lucide-react'
+import { User, LogOut } from 'lucide-react'
+import { useAuthActions } from '@convex-dev/auth/react'
 import { api } from 'convex/_generated/api'
 import { useCurrentUser } from '../lib/auth'
+
+const IS_DEV = import.meta.env.DEV
 
 export default function ProfileDropdown() {
   const userId = useCurrentUser()
@@ -10,8 +13,18 @@ export default function ProfileDropdown() {
     api.users.get,
     userId ? { userId } : 'skip'
   )
+  const { signOut } = useAuthActions()
 
   const displayName = user?.name || user?.email || 'User'
+
+  const handleSignOut = async () => {
+    if (!IS_DEV) {
+      await signOut()
+    } else {
+      // In dev mode, just reload to reset state
+      window.location.reload()
+    }
+  }
 
   return (
     <div className="dropdown dropdown-end">
@@ -28,6 +41,9 @@ export default function ProfileDropdown() {
             <li className="px-2 py-1">
               <div className="text-sm font-semibold">{user.name}</div>
               <div className="text-xs text-base-content/60">{user.email}</div>
+              {IS_DEV && (
+                <div className="text-xs text-primary mt-1">Dev Mode (Premium)</div>
+              )}
             </li>
             <li>
               <div className="divider my-1"></div>
@@ -39,6 +55,17 @@ export default function ProfileDropdown() {
             Settings
           </Link>
         </li>
+        {!IS_DEV && (
+          <li>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 text-error"
+            >
+              <LogOut size={16} />
+              Sign out
+            </button>
+          </li>
+        )}
       </ul>
     </div>
   )

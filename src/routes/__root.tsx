@@ -1,7 +1,7 @@
 import { HeadContent, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { ConvexProvider } from 'convex/react'
+import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { useEffect } from 'react'
 
 import AppLayout from '../components/AppLayout'
@@ -91,7 +91,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="bg-base-200 text-base-content">
-        <ConvexProvider client={convex}>
+        <ConvexAuthProvider client={convex}>
           <SidebarProvider>
             <RootDocumentContent>{children}</RootDocumentContent>
           </SidebarProvider>
@@ -106,7 +106,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               },
             ]}
           />
-        </ConvexProvider>
+        </ConvexAuthProvider>
         <Scripts />
       </body>
     </html>
