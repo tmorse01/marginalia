@@ -86,7 +86,7 @@ export default function ActivityLog({ noteId }: ActivityLogProps) {
         Activity
       </h3>
       <div className="space-y-3">
-        {activities.map((activity) => (
+        {activities.map((activity: { _id: string; type: string; actor?: { name?: string; email?: string } | null; metadata?: any; createdAt: number }) => (
           <div
             key={activity._id}
             className="card bg-base-200 border border-base-300"

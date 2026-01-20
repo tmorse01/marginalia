@@ -40,7 +40,7 @@ export default function FolderPicker({
     const folderMap = new Map<string, FolderNode>()
 
     // Create folder nodes
-    folders.forEach((folder) => {
+    folders.forEach((folder: { _id: Id<'folders'>; name: string; parentId?: Id<'folders'> | null }) => {
       folderMap.set(folder._id, {
         _id: folder._id,
         name: folder.name,

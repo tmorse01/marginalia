@@ -3,6 +3,7 @@ import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Home, ChevronRight, Folder, FileText, Plus } from 'lucide-react'
 import { useCurrentUser } from '../../lib/auth'
+import type { Id } from 'convex/_generated/dataModel'
 
 export const Route = createFileRoute('/folders/$folderId')({
   component: FolderView,
@@ -65,8 +66,8 @@ function FolderView() {
         {folderPath && folderPath.length > 0 && (
           <>
             {folderPath
-              .filter((pathFolder) => pathFolder._id !== folderId)
-              .map((pathFolder) => (
+              .filter((pathFolder: { _id: string; name: string }) => pathFolder._id !== folderId)
+              .map((pathFolder: { _id: string; name: string }) => (
                 <div key={pathFolder._id} className="flex items-center gap-2">
                   <ChevronRight size={14} className="text-base-content/40" />
                   <Link
@@ -112,7 +113,7 @@ function FolderView() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {/* Folder Cards */}
-          {contents.folders.map((subfolder) => (
+          {contents.folders.map((subfolder: { _id: Id<'folders'>; name: string }) => (
             <Link
               key={subfolder._id}
               {...({ to: "/folders/$folderId", params: { folderId: subfolder._id } } as any)}
@@ -129,7 +130,7 @@ function FolderView() {
           ))}
 
           {/* Note Cards */}
-          {contents.notes.map((note) => (
+          {contents.notes.map((note: { _id: Id<'notes'>; title?: string; content: string; updatedAt: number }) => (
             <Link
               key={note._id}
               to="/notes/$noteId"

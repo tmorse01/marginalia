@@ -123,7 +123,7 @@ export default function NotePageHeader({
         </Link>
         {folderPath && folderPath.length > 0 && (
           <>
-            {folderPath.map((folder) => (
+            {folderPath.map((folder: { _id: string; name: string }) => (
               <div key={folder._id} className="flex items-center gap-2">
                 <ChevronRight size={14} className="text-base-content/40" />
                 <Link

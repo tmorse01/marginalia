@@ -178,7 +178,7 @@ export default function ShareDialog({
                     <p className="text-sm">No shared users yet</p>
                   </div>
                 ) : (
-                  permissions.map((perm) => (
+                  permissions.map((perm: { _id: string; userId: Id<'users'>; role: 'owner' | 'editor' | 'viewer'; user?: { name?: string; email?: string } | null }) => (
                     <div
                       key={perm._id}
                       className="card bg-base-200 border border-base-300"

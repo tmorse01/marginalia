@@ -25,10 +25,10 @@ interface InlineMarkdownEditorProps {
 
 export default function InlineMarkdownEditor({
   content,
-  onChange,
+  onChange: _onChange,
   placeholder = 'Start writing...',
   className = '',
-  onCursorChange,
+  onCursorChange: _onCursorChange,
   suggestedContent,
   onApplySuggestion,
   onDismissSuggestion,

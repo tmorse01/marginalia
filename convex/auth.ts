@@ -38,11 +38,11 @@ export const getCurrentUserIdentity = query({
  * Internal query to get auth user info from auth users table
  * Note: authTables includes a "users" table, and we have our own "users" table
  * The authUserId from getAuthUserId refers to the auth users table
- * @ts-expect-error - Circular reference in type inference, but works at runtime
  */
+// @ts-expect-error - Circular reference in type inference, but works at runtime
 export const getAuthUserInfo = internalQuery({
   args: { userId: internal.id("users") },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ email?: string; name?: string } | null> => {
     // This gets from the auth users table (from authTables)
     // Since we override users in schema, this might need adjustment
     const user = await ctx.db.get(args.userId);

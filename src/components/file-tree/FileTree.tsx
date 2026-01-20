@@ -121,7 +121,7 @@ export default function FileTree() {
     const noteMap = new Map<string, TreeNode>()
 
     // Create folder nodes
-    folders.forEach((folder) => {
+    folders.forEach((folder: { _id: Id<'folders'>; name: string; parentId?: Id<'folders'> | null; order: number }) => {
       folderMap.set(folder._id, {
         id: `folder-${folder._id}`,
         type: 'folder',
@@ -134,7 +134,7 @@ export default function FileTree() {
     })
 
     // Create note nodes
-    notes.forEach((note) => {
+    notes.forEach((note: { _id: Id<'notes'>; title?: string; folderId?: Id<'folders'> | null; order?: number; updatedAt: number }) => {
       noteMap.set(note._id, {
         id: `note-${note._id}`,
         type: 'note',

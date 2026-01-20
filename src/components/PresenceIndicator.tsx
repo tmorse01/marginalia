@@ -37,7 +37,7 @@ export default function PresenceIndicator({
         <span className="font-medium">Live now:</span>
       </span>
       <div className="flex flex-wrap gap-2">
-        {activeUsers.map((user) => {
+        {activeUsers.map((user: PresenceEntry) => {
           const isCurrentUser = user.userId === currentUserId
           return (
             <span

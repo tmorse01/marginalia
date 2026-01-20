@@ -19,10 +19,10 @@ interface BasicTextEditorProps {
 
 export default function BasicTextEditor({
   content,
-  onChange,
+  onChange: _onChange,
   placeholder = 'Start writing...',
   className = '',
-  onCursorChange,
+  onCursorChange: _onCursorChange,
   suggestedContent,
   onApplySuggestion,
   onDismissSuggestion,

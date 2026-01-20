@@ -47,10 +47,10 @@ function HomePage() {
     const now = Date.now()
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000
 
-    const recentlyUpdated = notes.filter((n) => n.updatedAt >= sevenDaysAgo).length
-    const thisWeek = notes.filter((n) => n.createdAt >= sevenDaysAgo).length
+    const recentlyUpdated = notes.filter((n: { updatedAt: number }) => n.updatedAt >= sevenDaysAgo).length
+    const thisWeek = notes.filter((n: { createdAt: number }) => n.createdAt >= sevenDaysAgo).length
     const sharedNotes = notes.filter(
-      (n) =>
+      (n: { visibility: 'private' | 'shared' | 'public'; ownerId: Id<'users'> }) =>
         n.visibility === 'shared' ||
         n.visibility === 'public' ||
         (n.ownerId !== userId)
@@ -107,7 +107,7 @@ function HomePage() {
   // Create folder map for quick lookup
   const folderMap = useMemo(() => {
     if (!folders) return new Map<Id<'folders'>, string>()
-    return new Map(folders.map((f) => [f._id, f.name]))
+    return new Map(folders.map((f: { _id: Id<'folders'>; name: string }) => [f._id, f.name]))
   }, [folders])
 
   // Show loading state while user is being created/fetched
@@ -214,7 +214,7 @@ function HomePage() {
                 }
               >
                 <option value="all">All Folders</option>
-                {folders?.map((folder) => (
+                {folders?.map((folder: { _id: Id<'folders'>; name: string }) => (
                   <option key={folder._id} value={folder._id}>
                     {folder.name}
                   </option>
@@ -257,11 +257,11 @@ function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredAndSortedNotes.map((note) => (
+              {filteredAndSortedNotes.map((note: { _id: Id<'notes'>; title: string; content: string; updatedAt: number; createdAt: number; folderId?: Id<'folders'> | null; visibility: 'private' | 'shared' | 'public'; ownerId: Id<'users'>; order?: number }) => (
                 <NoteCard
                   key={note._id}
-                  note={note}
-                  folderName={note.folderId ? folderMap.get(note.folderId) : undefined}
+                  note={{ ...note, folderId: note.folderId ?? undefined }}
+                  folderName={note.folderId ? (folderMap.get(note.folderId) as string | undefined) : undefined}
                 />
               ))}
             </div>
