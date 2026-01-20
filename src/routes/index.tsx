@@ -17,6 +17,7 @@ type SortOption = 'updated' | 'created' | 'alphabetical' | 'alphabetical-reverse
 
 function HomePage() {
   const userId = useCurrentUser()
+  
   const notes = useQuery(
     api.notes.listUserNotes,
     userId ? { userId } : 'skip'
@@ -121,8 +122,8 @@ function HomePage() {
     )
   }
 
-  // Show landing page for first-time users (no notes yet)
-  if (notes !== undefined && notes.length === 0) {
+  // Show landing page for non-logged-in users or first-time users (no notes yet)
+  if (userId === null || (notes !== undefined && notes.length === 0)) {
     // Use a wrapper that removes the MainContent padding to match landing layout
     return (
       <div className="-mx-4 -my-8">

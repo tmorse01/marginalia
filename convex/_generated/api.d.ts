@@ -15,6 +15,7 @@ import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
 import type * as featureFlags from "../featureFlags.js";
 import type * as folders from "../folders.js";
+import type * as http from "../http.js";
 import type * as notes from "../notes.js";
 import type * as permissions from "../permissions.js";
 import type * as presence from "../presence.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   comments: typeof comments;
   featureFlags: typeof featureFlags;
   folders: typeof folders;
+  http: typeof http;
   notes: typeof notes;
   permissions: typeof permissions;
   presence: typeof presence;

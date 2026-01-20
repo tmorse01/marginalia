@@ -5,7 +5,7 @@ import { useAuthActions } from '@convex-dev/auth/react'
 import { api } from 'convex/_generated/api'
 import { useCurrentUser } from '../lib/auth'
 
-const IS_DEV = import.meta.env.DEV
+const IS_DEV = false // Disabled for auth testing
 
 export default function ProfileDropdown() {
   const userId = useCurrentUser()
@@ -14,6 +14,11 @@ export default function ProfileDropdown() {
     userId ? { userId } : 'skip'
   )
   const { signOut } = useAuthActions()
+
+  // Don't render if user is not authenticated (should be handled by parent)
+  if (userId === null || userId === undefined) {
+    return null
+  }
 
   const displayName = user?.name || user?.email || 'User'
 

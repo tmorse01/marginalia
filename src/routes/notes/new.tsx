@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import { useAuthActions } from '@convex-dev/auth/react'
+import { LogIn } from 'lucide-react'
 import AlertToast from '../../components/AlertToast'
 import { useCurrentUser } from '../../lib/auth'
 
@@ -69,6 +71,7 @@ function NewNotePage() {
   const { folderId } = Route.useSearch()
   const createNote = useMutation(api.notes.create)
   const userId = useCurrentUser()
+  const { signIn } = useAuthActions()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isCreating, setIsCreating] = useState(false)
@@ -79,6 +82,14 @@ function NewNotePage() {
     if (!title.trim()) {
       setAlertMessage('Please enter a title')
       setShowAlert(true)
+      return
+    }
+
+    // If user is not authenticated, prompt them to sign in
+    if (userId === null) {
+      // Store the note content in localStorage to restore after sign-in
+      localStorage.setItem('pending_note', JSON.stringify({ title: title.trim(), content, folderId }))
+      signIn('github')
       return
     }
 
@@ -121,11 +132,17 @@ function NewNotePage() {
     )
   }
 
-  // userId is undefined while loading, or Id<'users'> when ready
-  // No need to check for null as useCurrentUser never returns null
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {userId === null && (
+        <div className="alert alert-info mb-4">
+          <LogIn size={20} />
+          <div>
+            <h3 className="font-bold">Sign in to save your note</h3>
+            <div className="text-xs">You can start writing now, but you'll need to sign in to save it.</div>
+          </div>
+        </div>
+      )}
       <div className="card bg-base-100 shadow-xl border border-base-300">
         <div className="card-body">
           <h2 className="card-title text-primary mb-6">Create New Note</h2>
@@ -183,6 +200,11 @@ function NewNotePage() {
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
                   Creating...
+                </>
+              ) : userId === null ? (
+                <>
+                  <LogIn size={16} />
+                  Sign In to Save
                 </>
               ) : (
                 'Create Note'

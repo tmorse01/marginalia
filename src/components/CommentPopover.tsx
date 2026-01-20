@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import { useAuthActions } from '@convex-dev/auth/react'
 import {
   X,
   Check,
@@ -9,6 +10,7 @@ import {
   Trash2,
   Send,
   AlertTriangle,
+  LogIn,
 } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
 import AlertToast from './AlertToast'
@@ -57,6 +59,7 @@ export default function CommentPopover({
   currentLineContent,
   onClose,
 }: CommentPopoverProps) {
+  const { signIn } = useAuthActions()
   const createComment = useMutation(api.comments.create)
   const replyToComment = useMutation(api.comments.reply)
   const resolveComment = useMutation(api.comments.resolve)
@@ -313,7 +316,7 @@ export default function CommentPopover({
       </div>
 
       {/* New comment input - using DaisyUI form controls */}
-      {currentUserId && (
+      {currentUserId ? (
         <div className="p-4 border-t border-base-300 bg-base-200/30">
           <div className="join w-full">
             <input
@@ -331,6 +334,22 @@ export default function CommentPopover({
             >
               <Send size={16} />
             </button>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4 border-t border-base-300 bg-base-200/30">
+          <div className="alert alert-info">
+            <LogIn size={20} />
+            <div className="flex-1">
+              <h3 className="font-bold text-sm">Sign in to comment</h3>
+              <div className="text-xs">You need to be signed in to add comments.</div>
+              <button
+                onClick={() => signIn('github')}
+                className="btn btn-primary btn-sm mt-2"
+              >
+                Sign In
+              </button>
+            </div>
           </div>
         </div>
       )}

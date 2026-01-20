@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, Bot, User, Trash2, MessageSquare, Edit, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { Send, Bot, User, Trash2, MessageSquare, Edit, ChevronDown, ChevronUp, Check, LogIn } from 'lucide-react'
 import { useAction, useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import { useAuthActions } from '@convex-dev/auth/react'
 import { useCurrentUser } from '../lib/auth'
 import MarkdownViewer from './MarkdownViewer'
 import type { Id } from 'convex/_generated/dataModel'
@@ -32,6 +33,7 @@ export default function AIChatPanel({
   onApplySuggestion,
 }: AIChatPanelProps) {
   const currentUserId = useCurrentUser()
+  const { signIn } = useAuthActions()
   // Type assertions needed until Convex generates API types (run `npx convex dev`)
   const chatAction = useAction((api as any).ai?.chat)
   const addMessageMutation = useMutation((api as any).aiConversations?.addMessage)
@@ -257,10 +259,21 @@ export default function AIChatPanel({
     }
   }
 
-  if (!currentUserId) {
+  if (currentUserId === null) {
     return (
       <div className="flex flex-col h-full items-center justify-center p-6">
-        <p className="text-sm text-base-content/60">Please sign in to use AI assistant</p>
+        <Bot size={48} className="text-primary mx-auto mb-4 opacity-50" />
+        <h3 className="font-bold text-lg mb-2">AI Assistant</h3>
+        <p className="text-sm text-base-content/60 mb-4 text-center">
+          Sign in to use the AI assistant
+        </p>
+        <button
+          onClick={() => signIn('github')}
+          className="btn btn-primary btn-sm gap-2"
+        >
+          <LogIn size={16} />
+          Sign In
+        </button>
       </div>
     )
   }

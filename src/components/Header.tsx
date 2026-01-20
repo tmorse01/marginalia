@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router'
-import { Menu, X, PanelLeft } from 'lucide-react'
+import { Menu, X, PanelLeft, LogIn } from 'lucide-react'
 import { useState } from 'react'
 import { useSidebar } from '../lib/sidebar-context'
+import { useCurrentUser } from '../lib/auth'
+import { useAuthActions } from '@convex-dev/auth/react'
 import Logo from './Logo'
 import ProfileDropdown from './ProfileDropdown'
 import ThemeSelector from './ThemeSelector'
@@ -9,6 +11,8 @@ import ThemeSelector from './ThemeSelector'
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const { isCollapsed, toggleCollapse, isLandingPage } = useSidebar()
+  const userId = useCurrentUser()
+  const { signIn } = useAuthActions()
 
   return (
     <>
@@ -38,7 +42,29 @@ export default function Header() {
           </button>
           <div className="hidden lg:flex lg:items-center lg:gap-4">
             <ThemeSelector />
-            <ProfileDropdown />
+            {userId === undefined ? (
+              <span className="loading loading-spinner loading-sm"></span>
+            ) : userId === null ? (
+              <button
+                onClick={() => {
+                  console.log('[AUTH DEBUG] ===== SIGN IN CLICKED =====')
+                  console.log('[AUTH DEBUG] signIn function:', signIn)
+                  console.log('[AUTH DEBUG] Calling signIn("github")...')
+                  try {
+                    const result = signIn('github')
+                    console.log('[AUTH DEBUG] signIn returned:', result)
+                  } catch (error) {
+                    console.error('[AUTH DEBUG] signIn error:', error)
+                  }
+                }}
+                className="btn btn-primary btn-sm gap-2"
+              >
+                <LogIn size={16} />
+                Sign In
+              </button>
+            ) : (
+              <ProfileDropdown />
+            )}
           </div>
         </div>
       </header>
@@ -63,7 +89,31 @@ export default function Header() {
             </div>
             <nav className="flex-1 p-4 overflow-y-auto">
               <div className="mb-4">
-                <ProfileDropdown />
+                {userId === undefined ? (
+                  <div className="flex justify-center">
+                    <span className="loading loading-spinner loading-sm"></span>
+                  </div>
+                ) : userId === null ? (
+                  <button
+                    onClick={() => {
+                      console.log('[AUTH DEBUG] ===== SIGN IN CLICKED (MOBILE) =====')
+                      console.log('[AUTH DEBUG] signIn function:', signIn)
+                      console.log('[AUTH DEBUG] Calling signIn("github")...')
+                      try {
+                        const result = signIn('github')
+                        console.log('[AUTH DEBUG] signIn returned:', result)
+                      } catch (error) {
+                        console.error('[AUTH DEBUG] signIn error:', error)
+                      }
+                    }}
+                    className="btn btn-primary btn-sm w-full gap-2"
+                  >
+                    <LogIn size={16} />
+                    Sign In
+                  </button>
+                ) : (
+                  <ProfileDropdown />
+                )}
               </div>
               <div className="mt-4 pt-4 border-t border-base-300">
                 <div className="text-sm font-medium mb-2 px-2">Theme</div>

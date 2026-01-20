@@ -17,8 +17,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, Folder, FileText, Search, X } from 'lucide-react'
+import { Plus, Folder, FileText, Search, X, LogIn } from 'lucide-react'
 import { useCurrentUser } from '../../lib/auth'
+import { useAuthActions } from '@convex-dev/auth/react'
 import AlertToast from '../AlertToast'
 import FileTreeItem from './FileTreeItem'
 import type {
@@ -59,6 +60,7 @@ interface TreeNode {
 
 export default function FileTree() {
   const userId = useCurrentUser()
+  const { signIn } = useAuthActions()
   const folders = useQuery(api.folders.list, userId ? { userId } : 'skip')
   const notes = useQuery(api.notes.listUserNotes, userId ? { userId } : 'skip')
   const moveNote = useMutation(api.notes.moveToFolder)
@@ -646,6 +648,31 @@ export default function FileTree() {
     )
   }
 
+  // Show sign-in prompt for non-logged-in users
+  if (userId === null) {
+    return (
+      <div className="file-tree">
+        <div className="border-b border-base-300">
+          <div className="flex items-center justify-between px-2 py-2">
+            <h2 className="text-sm font-semibold text-base-content/70">Files</h2>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center h-64 p-4 text-center">
+          <p className="text-sm text-base-content/60 mb-4">
+            Sign in to create notes and folders
+          </p>
+          <button
+            onClick={() => signIn('github')}
+            className="btn btn-primary btn-sm gap-2"
+          >
+            <LogIn size={16} />
+            Sign In
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (folders === undefined || notes === undefined) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -672,6 +699,7 @@ export default function FileTree() {
                 onClick={() => handleNewNote()}
                 className="btn btn-ghost btn-xs btn-square"
                 title="New Note"
+                disabled={!userId}
               >
                 <Plus className="size-[1.2em]" strokeWidth={2.5} />
               </button>
@@ -679,6 +707,7 @@ export default function FileTree() {
                 onClick={() => handleNewFolder()}
                 className="btn btn-ghost btn-xs btn-square"
                 title="New Folder"
+                disabled={!userId}
               >
                 <Folder className="size-[1.2em]" strokeWidth={2.5} />
               </button>

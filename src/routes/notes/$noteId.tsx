@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { HelpCircle } from 'lucide-react'
+import { useAuthActions } from '@convex-dev/auth/react'
+import { HelpCircle, LogIn } from 'lucide-react'
 import NoteEditor from '../../components/NoteEditor'
 import CommentableContent from '../../components/CommentableContent'
 import GeneralComments from '../../components/GeneralComments'
@@ -27,6 +28,7 @@ function NotePage() {
   const note = useQuery(api.notes.get, { noteId: noteId as any })
   const updateNote = useMutation(api.notes.update)
   const currentUserId = useCurrentUser()
+  const { signIn } = useAuthActions()
   const activeUsers = useQuery(api.presence.getActiveUsers, { noteId: noteId as any })
   const allComments = useQuery(api.comments.listByNote, { noteId: noteId as any })
   
@@ -62,9 +64,9 @@ function NotePage() {
     }
   }, [note, isEditing])
 
-  // Debounced save for content (only when editing)
+  // Debounced save for content (only when editing and authenticated)
   useEffect(() => {
-    if (!isEditing || !note) return
+    if (!isEditing || !note || !currentUserId) return
 
     const timeoutId = setTimeout(() => {
       if (content !== note.content) {
@@ -76,11 +78,11 @@ function NotePage() {
     }, 1000)
 
     return () => clearTimeout(timeoutId)
-  }, [content, isEditing, note, noteId, updateNote])
+  }, [content, isEditing, note, noteId, updateNote, currentUserId])
 
-  // Debounced save for title (independent of editing mode)
+  // Debounced save for title (only when authenticated)
   useEffect(() => {
-    if (!note) return
+    if (!note || !currentUserId) return
 
     const timeoutId = setTimeout(() => {
       if (title !== note.title) {
@@ -92,7 +94,7 @@ function NotePage() {
     }, 1000)
 
     return () => clearTimeout(timeoutId)
-  }, [title, note, noteId, updateNote])
+  }, [title, note, noteId, updateNote, currentUserId])
 
   useNotePresence({
     noteId: noteId as any,
@@ -131,10 +133,25 @@ function NotePage() {
       {/* Page Header */}
       <div className="w-full">
         <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 sm:px-4 lg:px-6">
+          {currentUserId === null && (
+            <div className="alert alert-info mb-4">
+              <LogIn size={20} />
+              <div>
+                <h3 className="font-bold">Sign in to edit this note</h3>
+                <div className="text-xs">You can view the note, but you'll need to sign in to make changes.</div>
+              </div>
+            </div>
+          )}
           <NotePageHeader
             note={note}
             isEditing={isEditing}
-            onEditToggle={() => setIsEditing(!isEditing)}
+            onEditToggle={() => {
+              if (currentUserId === null) {
+                signIn('github')
+                return
+              }
+              setIsEditing(!isEditing)
+            }}
             showSidebar={showSidebar}
             activeTab={activeTab}
             onCommentsClick={() => {
@@ -177,7 +194,7 @@ function NotePage() {
           <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden w-full">
             {/* Content Section */}
             <div className="card-body p-3 sm:p-6 w-full">
-              {isEditing ? (
+              {isEditing && currentUserId ? (
                 <>
                   <div className="flex justify-end mb-3">
                     <button

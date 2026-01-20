@@ -97,6 +97,46 @@ export const getOrCreateUserFromIdentity = internalMutation({
 });
 
 /**
+ * Get or create user from email and name
+ * Public mutation that can be called from client
+ */
+export const getOrCreateUserFromEmail = mutation({
+  args: {
+    email: v.string(),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+    
+    if (existing) {
+      // Ensure test user is premium
+      if (args.email === "test@example.com" && existing.subscriptionTier !== "premium") {
+        await ctx.db.patch(existing._id, {
+          subscriptionTier: "premium",
+        });
+      }
+      return existing._id;
+    }
+
+    // Test user gets premium tier automatically
+    const isTestUser = args.email === "test@example.com";
+    const tier = isTestUser ? "premium" : "free";
+
+    const userId = await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email,
+      createdAt: Date.now(),
+      subscriptionTier: tier,
+    });
+
+    return userId;
+  },
+});
+
+/**
  * Get or create test user (for development)
  * Public mutation for development use
  */
