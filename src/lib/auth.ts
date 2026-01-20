@@ -28,11 +28,13 @@ export function useCurrentUser(): Id<'users'> | undefined {
           setAuthenticatedUserId(userId)
           hasFetchedUserId.current = false // Allow refetch if identity changes
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('Failed to get current user ID:', error)
           setAuthenticatedUserId(null)
           hasFetchedUserId.current = false
         })
     } else if (!IS_DEV && !isAuthenticated && !authLoading) {
+      // User is not authenticated - set to null (not undefined) so we don't show loader
       setAuthenticatedUserId(null)
       hasFetchedUserId.current = false
     }

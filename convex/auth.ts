@@ -1,6 +1,7 @@
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
 import GitHub from "@auth/core/providers/github";
 import Google from "@auth/core/providers/google";
+import { v } from "convex/values";
 import { query, action, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -35,24 +36,36 @@ export const getCurrentUserIdentity = query({
 });
 
 /**
- * Internal query to get auth user info from auth users table
- * Note: authTables includes a "users" table, and we have our own "users" table
- * The authUserId from getAuthUserId refers to the auth users table
+ * Internal query to get current authenticated user's identity
+ * Used by actions that need to access auth user data
  */
-// @ts-expect-error - Circular reference in type inference, but works at runtime
+export const getCurrentUserIdentityInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const authUserId = await getAuthUserId(ctx);
+    if (!authUserId) {
+      return null;
+    }
+    return await ctx.db.get(authUserId);
+  },
+});
+
+/**
+ * Internal query to get auth user info from users table
+ * Since we override the users table in schema, authUserId refers to our custom users table
+ */
 export const getAuthUserInfo = internalQuery({
-  args: { userId: internal.id("users") },
+  args: { userId: v.id("users") },
   handler: async (ctx, args): Promise<{ email?: string; name?: string } | null> => {
-    // This gets from the auth users table (from authTables)
-    // Since we override users in schema, this might need adjustment
+    // Get user from our custom users table (which overrides the auth users table)
     const user = await ctx.db.get(args.userId);
     if (!user) {
       return null;
     }
-    // Auth users table has optional email and name fields
+    // Our users table has email and name fields
     return {
-      email: (user as { email?: string }).email,
-      name: (user as { name?: string }).name,
+      email: user.email,
+      name: user.name,
     };
   },
 });
@@ -70,17 +83,22 @@ export const getCurrentUserId = action({
       return null;
     }
 
-    // Get auth user to extract email/name using the exported query
-    // Use type assertion to break circular reference
-    const authUser = await ctx.runQuery(internal.auth.getAuthUserInfo as any, { userId: authUserId });
+    // Get auth user directly from the database (since we override users table, 
+    // the auth user is in our custom users table)
+    const authUser = await ctx.runQuery(internal.auth.getCurrentUserIdentityInternal);
     if (!authUser) {
       return null;
     }
 
+    // Extract email and name from auth user
+    // The auth user might have email/name in different fields depending on provider
+    const email = (authUser as any).email || (authUser as any).name || "unknown";
+    const name = (authUser as any).name || (authUser as any).email || "Unknown User";
+
     // Get or create user from identity in our users table
     return await ctx.runMutation(internal.users.getOrCreateUserFromIdentity, {
-      email: authUser.email ?? authUser.name ?? "unknown",
-      name: authUser.name ?? authUser.email ?? "Unknown User",
+      email,
+      name,
     });
   },
 });
@@ -98,16 +116,19 @@ export const requireAuth = action({
       throw new Error("Not authenticated");
     }
 
-    // Get auth user to extract email/name using the exported query
-    // Use type assertion to break circular reference
-    const authUser = await ctx.runQuery(internal.auth.getAuthUserInfo as any, { userId: authUserId });
+    // Get auth user directly from the database
+    const authUser = await ctx.runQuery(internal.auth.getCurrentUserIdentityInternal);
     if (!authUser) {
       throw new Error("Failed to get auth user");
     }
 
+    // Extract email and name from auth user
+    const email = (authUser as any).email || (authUser as any).name || "unknown";
+    const name = (authUser as any).name || (authUser as any).email || "Unknown User";
+
     const userId = await ctx.runMutation(internal.users.getOrCreateUserFromIdentity, {
-      email: authUser.email ?? authUser.name ?? "unknown",
-      name: authUser.name ?? authUser.email ?? "Unknown User",
+      email,
+      name,
     });
 
     if (!userId) {
