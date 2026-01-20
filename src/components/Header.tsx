@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, X, PanelLeft, LogIn } from 'lucide-react'
 import { useState } from 'react'
+import { useConvexAuth } from 'convex/react'
 import { useSidebar } from '../lib/sidebar-context'
 import { useCurrentUser } from '../lib/auth'
 import { useAuthActions } from '@convex-dev/auth/react'
+import { useAuthFlag } from '../lib/feature-flags'
 import Logo from './Logo'
 import ProfileDropdown from './ProfileDropdown'
 import ThemeSelector from './ThemeSelector'
@@ -11,8 +13,64 @@ import ThemeSelector from './ThemeSelector'
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const { isCollapsed, toggleCollapse, isLandingPage } = useSidebar()
+  const authEnabled = useAuthFlag()
   const userId = useCurrentUser()
-  const { signIn } = useAuthActions()
+  
+  // Only use auth hooks if auth is enabled
+  const authActions = authEnabled ? useAuthActions() : null
+  const authState = authEnabled ? useConvexAuth() : { isAuthenticated: false }
+  
+  const signIn = authActions?.signIn
+  const signOut = authActions?.signOut
+  const { isAuthenticated } = authState
+  
+  const handleSignIn = async () => {
+    if (!authEnabled || !signIn) {
+      console.warn('[AUTH] Sign in attempted but auth is disabled')
+      return
+    }
+    
+    console.log('[AUTH DEBUG] ===== SIGN IN CLICKED =====')
+    console.log('[AUTH DEBUG] Current userId:', userId)
+    console.log('[AUTH DEBUG] isAuthenticated:', isAuthenticated)
+    
+    // If somehow authenticated but userId is null, sign out first to reset state
+    if (isAuthenticated && userId === null && signOut) {
+      console.log('[AUTH DEBUG] Auth state mismatch detected, signing out first...')
+      try {
+        await signOut()
+        // Wait a moment for sign out to complete
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch (error) {
+        console.error('[AUTH DEBUG] Error signing out:', error)
+      }
+    }
+    
+    try {
+      const result = signIn('github')
+      console.log('[AUTH DEBUG] signIn returned:', result)
+      
+      // If signIn returns a promise, wait a bit to see if redirect happens
+      if (result && typeof result.then === 'function') {
+        await Promise.race([
+          result,
+          new Promise(resolve => setTimeout(resolve, 1000))
+        ])
+      } else {
+        // If no redirect happened after a short delay, force it
+        setTimeout(() => {
+          if (document.hasFocus()) {
+            console.log('[AUTH DEBUG] No redirect detected, forcing redirect to GitHub OAuth')
+            window.location.href = 'https://useful-vole-535.convex.site/api/auth/signin/github'
+          }
+        }, 500)
+      }
+    } catch (error) {
+      console.error('[AUTH DEBUG] signIn error:', error)
+      // Fallback: redirect directly to OAuth URL
+      window.location.href = 'https://useful-vole-535.convex.site/api/auth/signin/github'
+    }
+  }
 
   return (
     <>
@@ -46,17 +104,7 @@ export default function Header() {
               <span className="loading loading-spinner loading-sm"></span>
             ) : userId === null ? (
               <button
-                onClick={() => {
-                  console.log('[AUTH DEBUG] ===== SIGN IN CLICKED =====')
-                  console.log('[AUTH DEBUG] signIn function:', signIn)
-                  console.log('[AUTH DEBUG] Calling signIn("github")...')
-                  try {
-                    const result = signIn('github')
-                    console.log('[AUTH DEBUG] signIn returned:', result)
-                  } catch (error) {
-                    console.error('[AUTH DEBUG] signIn error:', error)
-                  }
-                }}
+                onClick={handleSignIn}
                 className="btn btn-primary btn-sm gap-2"
               >
                 <LogIn size={16} />
@@ -95,17 +143,7 @@ export default function Header() {
                   </div>
                 ) : userId === null ? (
                   <button
-                    onClick={() => {
-                      console.log('[AUTH DEBUG] ===== SIGN IN CLICKED (MOBILE) =====')
-                      console.log('[AUTH DEBUG] signIn function:', signIn)
-                      console.log('[AUTH DEBUG] Calling signIn("github")...')
-                      try {
-                        const result = signIn('github')
-                        console.log('[AUTH DEBUG] signIn returned:', result)
-                      } catch (error) {
-                        console.error('[AUTH DEBUG] signIn error:', error)
-                      }
-                    }}
+                    onClick={handleSignIn}
                     className="btn btn-primary btn-sm w-full gap-2"
                   >
                     <LogIn size={16} />

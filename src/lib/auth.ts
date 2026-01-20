@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuthActions } from '@convex-dev/auth/react'
 import { api } from 'convex/_generated/api'
 import type { Id } from 'convex/_generated/dataModel'
+import { useAuthFlag } from './feature-flags'
 
 const TEST_USER_EMAIL = 'test@example.com'
 const IS_DEV = false // Disabled for auth testing
@@ -12,8 +13,17 @@ const IS_DEV = false // Disabled for auth testing
  * Returns undefined while loading, null when not authenticated, or Id<'users'> when authenticated
  * In development mode, falls back to test user with premium subscription
  * In production, uses Convex Auth
+ * 
+ * Returns null immediately if auth feature flag is disabled
  */
 export function useCurrentUser(): Id<'users'> | null | undefined {
+  const authEnabled = useAuthFlag()
+  
+  // If auth is disabled, return null immediately
+  if (!authEnabled) {
+    return null
+  }
+  
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth()
   
   // Log Convex URL on first render to help debug
@@ -45,34 +55,42 @@ export function useCurrentUser(): Id<'users'> | null | undefined {
   }, [IS_DEV, isAuthenticated, authLoading, authUserIdentity, authenticatedUserId])
   
   useEffect(() => {
-    // If we have an auth user identity (even if isAuthenticated is false due to sync delay), create/get user
-    if (!IS_DEV && authUserIdentity && !hasFetchedUserId.current) {
-      hasFetchedUserId.current = true
-      
-      // Extract email and name from auth user
-      const email = (authUserIdentity as any).email || (authUserIdentity as any).name || "unknown"
-      const name = (authUserIdentity as any).name || (authUserIdentity as any).email || "Unknown User"
-      
-      console.log('[AUTH DEBUG] Creating/getting user from identity:', { email, name, isAuthenticated })
-      
-      getOrCreateUser({ email, name })
-        .then((userId) => {
-          console.log('[AUTH DEBUG] User created/found:', userId)
-          setAuthenticatedUserId(userId)
-          hasFetchedUserId.current = false // Allow refetch if identity changes
-        })
-        .catch((error) => {
-          console.error('[AUTH DEBUG] Failed to get/create user:', error)
-          setAuthenticatedUserId(null)
-          hasFetchedUserId.current = false
-        })
-    } else if (!IS_DEV && !authLoading && authUserIdentity === null && !hasFetchedUserId.current) {
-      // User is not authenticated - set to null (not undefined) so we don't show loader
-      // Only set if we haven't already fetched (to avoid overwriting a valid userId)
-      if (authenticatedUserId === undefined) {
+    // Reset fetch flag when auth state changes significantly
+    if (!IS_DEV && !authLoading) {
+      // If we have an auth user identity, create/get user
+      if (authUserIdentity && !hasFetchedUserId.current) {
+        hasFetchedUserId.current = true
+        
+        // Extract email and name from auth user
+        const email = (authUserIdentity as any).email || (authUserIdentity as any).name || "unknown"
+        const name = (authUserIdentity as any).name || (authUserIdentity as any).email || "Unknown User"
+        
+        console.log('[AUTH DEBUG] Creating/getting user from identity:', { email, name, isAuthenticated })
+        
+        getOrCreateUser({ email, name })
+          .then((userId) => {
+            console.log('[AUTH DEBUG] User created/found:', userId)
+            setAuthenticatedUserId(userId)
+            hasFetchedUserId.current = false // Allow refetch if identity changes
+          })
+          .catch((error) => {
+            console.error('[AUTH DEBUG] Failed to get/create user:', error)
+            setAuthenticatedUserId(null)
+            hasFetchedUserId.current = false
+          })
+      } 
+      // If authUserIdentity is null and we're not loading, user is not authenticated
+      else if (authUserIdentity === null && authenticatedUserId === undefined) {
+        // Only set to null if we haven't set it yet (initial state)
         setAuthenticatedUserId(null)
+        hasFetchedUserId.current = false
       }
-      hasFetchedUserId.current = false
+      // If we had a userId but now authUserIdentity is null, user signed out
+      else if (authUserIdentity === null && authenticatedUserId !== null && authenticatedUserId !== undefined) {
+        console.log('[AUTH DEBUG] User signed out, resetting state')
+        setAuthenticatedUserId(null)
+        hasFetchedUserId.current = false
+      }
     }
   }, [IS_DEV, isAuthenticated, authLoading, authUserIdentity, getOrCreateUser, authenticatedUserId])
 

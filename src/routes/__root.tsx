@@ -9,6 +9,7 @@ import AppLayout from '../components/AppLayout'
 import LandingLayout from '../components/LandingLayout'
 import { SidebarProvider } from '../lib/sidebar-context'
 import { convex } from '../lib/convex'
+import { useAuthFlag } from '../lib/feature-flags'
 
 import appCss from '../styles.css?url'
 
@@ -76,6 +77,8 @@ function RootDocumentContent({ children }: { children: React.ReactNode }) {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const authEnabled = useAuthFlag()
+  
   // Initialize theme from localStorage or default to dark
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark'
@@ -106,28 +109,49 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     return () => observer.disconnect()
   }, [])
 
+  const content = (
+    <SidebarProvider>
+      <RootDocumentContent>{children}</RootDocumentContent>
+    </SidebarProvider>
+  )
+
   return (
     <html lang="en" data-theme="dark">
       <head>
         <HeadContent />
       </head>
       <body className="bg-base-200 text-base-content">
-        <ConvexAuthProvider client={convex}>
-          <SidebarProvider>
-            <RootDocumentContent>{children}</RootDocumentContent>
-          </SidebarProvider>
-          <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
-            plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-            ]}
-          />
-        </ConvexAuthProvider>
+        {authEnabled ? (
+          <ConvexAuthProvider client={convex}>
+            {content}
+            <TanStackDevtools
+              config={{
+                position: 'bottom-right',
+              }}
+              plugins={[
+                {
+                  name: 'Tanstack Router',
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+              ]}
+            />
+          </ConvexAuthProvider>
+        ) : (
+          <>
+            {content}
+            <TanStackDevtools
+              config={{
+                position: 'bottom-right',
+              }}
+              plugins={[
+                {
+                  name: 'Tanstack Router',
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+              ]}
+            />
+          </>
+        )}
         <Scripts />
       </body>
     </html>
