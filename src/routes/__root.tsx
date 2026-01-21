@@ -1,12 +1,14 @@
 import { HeadContent, Scripts, createRootRoute, useLocation, Link } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { ConvexProvider } from 'convex/react'
 import { useEffect } from 'react'
 import { Home, FileQuestion } from 'lucide-react'
 
 import AppLayout from '../components/AppLayout'
 import LandingLayout from '../components/LandingLayout'
 import { SidebarProvider } from '../lib/sidebar-context'
+import { convex } from '../lib/convex'
 
 import appCss from '../styles.css?url'
 
@@ -116,18 +118,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="bg-base-200 text-base-content">
-        {content}
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
+        <ConvexProvider client={convex}>
+          {content}
+          <TanStackDevtools
+            config={{
+              position: 'bottom-right',
+            }}
+            plugins={[
+              {
+                name: 'Tanstack Router',
+                render: <TanStackRouterDevtoolsPanel />,
+              },
+            ]}
+          />
+        </ConvexProvider>
         <Scripts />
       </body>
     </html>

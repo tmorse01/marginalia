@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus, Folder, FileText, Search, X } from 'lucide-react'
+import { useTestUser } from '../../lib/useTestUser'
 import AlertToast from '../AlertToast'
 import FileTreeItem from './FileTreeItem'
 import type {
@@ -57,8 +58,9 @@ interface TreeNode {
 }
 
 export default function FileTree() {
-  const folders = useQuery(api.folders.list, 'skip')
-  const notes = useQuery(api.notes.listUserNotes, 'skip')
+  const userId = useTestUser()
+  const folders = useQuery(api.folders.list, userId ? { userId } : 'skip')
+  const notes = useQuery(api.notes.listUserNotes, userId ? { userId } : 'skip')
   const moveNote = useMutation(api.notes.moveToFolder)
   const moveFolder = useMutation(api.folders.move)
   const reorderNote = useMutation(api.notes.reorder)
@@ -182,7 +184,7 @@ export default function FileTree() {
     }
 
     return sortNodes(rootNodes)
-  }, [folders, notes, userId])
+  }, [folders, notes])
 
   // Keyboard navigation
   useEffect(() => {
@@ -561,11 +563,13 @@ export default function FileTree() {
   }
 
   const handleNewNote = async (parentFolderId?: Id<'folders'>) => {
+    if (!userId) return
+    
     try {
       const noteId = await createNote({
         title: 'New Note',
         content: '',
-        ownerId: '' as any, // TODO: Replace with actual user ID when auth is re-implemented
+        ownerId: userId,
         folderId: parentFolderId,
       })
       navigate({ to: '/notes/$noteId', params: { noteId } })
@@ -578,10 +582,12 @@ export default function FileTree() {
   }
 
   const handleNewFolder = async (parentFolderId?: Id<'folders'>) => {
+    if (!userId) return
+    
     try {
       await createFolder({
         name: 'New Folder',
-        ownerId: '' as any, // TODO: Replace with actual user ID when auth is re-implemented
+        ownerId: userId,
         parentId: parentFolderId,
       })
       // Expand parent folder to show new folder
@@ -634,7 +640,7 @@ export default function FileTree() {
 
 
 
-  if (folders === undefined || notes === undefined) {
+  if (folders === undefined || notes === undefined || userId === undefined) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="loading loading-spinner"></span>

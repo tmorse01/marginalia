@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { ChevronRight, ChevronDown, Folder, Home } from 'lucide-react'
+import { useTestUser } from '../lib/useTestUser'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface FolderNode {
@@ -28,7 +29,8 @@ export default function FolderPicker({
   itemType,
   itemName,
 }: FolderPickerProps) {
-  const folders = useQuery(api.folders.list, 'skip')
+  const userId = useTestUser()
+  const folders = useQuery(api.folders.list, userId ? { userId } : 'skip')
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
 
   // Build tree structure

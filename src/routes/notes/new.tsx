@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import { useTestUser } from '../../lib/useTestUser'
 import AlertToast from '../../components/AlertToast'
 
 export const Route = createFileRoute('/notes/new')({
@@ -67,7 +68,7 @@ function NewNotePage() {
   const navigate = useNavigate()
   const { folderId } = Route.useSearch()
   const createNote = useMutation(api.notes.create)
-  const userId = null // TODO: Replace with actual user ID when auth is re-implemented
+  const userId = useTestUser()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isCreating, setIsCreating] = useState(false)
@@ -82,7 +83,7 @@ function NewNotePage() {
     }
 
     if (!userId) {
-      setAlertMessage('User ID required. Please implement authentication.')
+      setAlertMessage('Please wait for user to be initialized')
       setShowAlert(true)
       return
     }
@@ -109,7 +110,6 @@ function NewNotePage() {
     }
   }
 
-  // Show loading state while user is being created/fetched
   if (userId === undefined) {
     return (
       <div className="container mx-auto px-4 py-8">

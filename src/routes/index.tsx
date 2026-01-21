@@ -4,6 +4,7 @@ import { api } from 'convex/_generated/api'
 import { Plus, FileText, Clock, Users, Search, Filter } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSidebar } from '../lib/sidebar-context'
+import { useTestUser } from '../lib/useTestUser'
 import LandingPage from '../components/landing/LandingPage'
 import NoteCard from '../components/NoteCard'
 import type { Id } from 'convex/_generated/dataModel'
@@ -15,10 +16,9 @@ export const Route = createFileRoute('/')({
 type SortOption = 'updated' | 'created' | 'alphabetical' | 'alphabetical-reverse'
 
 function HomePage() {
-  const userId = null // TODO: Replace with actual user ID when auth is re-implemented
-  
-  const notes = useQuery(api.notes.listUserNotes, 'skip')
-  const folders = useQuery(api.folders.list, 'skip')
+  const userId = useTestUser()
+  const notes = useQuery(api.notes.listUserNotes, userId ? { userId } : 'skip')
+  const folders = useQuery(api.folders.list, userId ? { userId } : 'skip')
   const { setIsLandingPage } = useSidebar()
 
   const [searchQuery, setSearchQuery] = useState('')

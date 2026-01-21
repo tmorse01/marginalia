@@ -343,7 +343,6 @@ export default function GeneralComments({
                 </div>
               ) : (
                 <div className="alert alert-info pt-2 border-t border-base-300">
-                  <LogIn size={16} />
                   <div className="flex-1">
                     <h3 className="font-bold text-sm">Sign in to comment</h3>
                     <div className="text-xs">You need to be signed in to add comments.</div>

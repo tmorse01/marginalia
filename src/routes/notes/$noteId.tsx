@@ -12,6 +12,7 @@ import LiveCursorOverlay from '../../components/LiveCursorOverlay'
 import RightSidebar from '../../components/RightSidebar'
 import NotePageHeader from '../../components/NotePageHeader'
 import MarkdownCheatSheetModal from '../../components/MarkdownCheatSheetModal'
+import { useTestUser } from '../../lib/useTestUser'
 import { useNotePresence } from '../../lib/presence'
 
 export const Route = createFileRoute('/notes/$noteId')({
@@ -25,7 +26,7 @@ function NotePage() {
   const navigate = useNavigate()
   const note = useQuery(api.notes.get, { noteId: noteId as any })
   const updateNote = useMutation(api.notes.update)
-  const currentUserId = null // TODO: Replace with actual user ID when auth is re-implemented
+  const currentUserId = useTestUser()
   const activeUsers = useQuery(api.presence.getActiveUsers, { noteId: noteId as any })
   const allComments = useQuery(api.comments.listByNote, { noteId: noteId as any })
   
@@ -61,9 +62,9 @@ function NotePage() {
     }
   }, [note, isEditing])
 
-  // Debounced save for content (only when editing and authenticated)
+  // Debounced save for content (only when editing)
   useEffect(() => {
-    if (!isEditing || !note || !currentUserId) return
+    if (!isEditing || !note) return
 
     const timeoutId = setTimeout(() => {
       if (content !== note.content) {
@@ -75,11 +76,11 @@ function NotePage() {
     }, 1000)
 
     return () => clearTimeout(timeoutId)
-  }, [content, isEditing, note, noteId, updateNote, currentUserId])
+  }, [content, isEditing, note, noteId, updateNote])
 
-  // Debounced save for title (only when authenticated)
+  // Debounced save for title
   useEffect(() => {
-    if (!note || !currentUserId) return
+    if (!note) return
 
     const timeoutId = setTimeout(() => {
       if (title !== note.title) {
@@ -91,17 +92,17 @@ function NotePage() {
     }, 1000)
 
     return () => clearTimeout(timeoutId)
-  }, [title, note, noteId, updateNote, currentUserId])
+  }, [title, note, noteId, updateNote])
 
   useNotePresence({
     noteId: noteId as any,
-    userId: currentUserId,
+    userId: currentUserId ?? null,
     mode: isEditing ? 'editing' : 'viewing',
     cursorStart: isEditing ? cursorStart : undefined,
     cursorEnd: isEditing ? cursorEnd : undefined,
   })
 
-  if (note === undefined) {
+  if (note === undefined || currentUserId === undefined) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="loading loading-spinner loading-lg"></span>
@@ -178,7 +179,7 @@ function NotePage() {
           <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden w-full">
             {/* Content Section */}
             <div className="card-body p-3 sm:p-6 w-full">
-              {isEditing && currentUserId ? (
+              {isEditing ? (
                 <>
                   <div className="flex justify-end mb-3">
                     <button

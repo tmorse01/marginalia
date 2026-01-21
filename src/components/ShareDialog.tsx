@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Check, Copy, Share2, UserPlus, X } from 'lucide-react'
+import { useTestUser } from '../lib/useTestUser'
 import AlertToast from './AlertToast'
 import type { Id } from 'convex/_generated/dataModel'
 
@@ -16,7 +17,7 @@ export default function ShareDialog({
   isOpen,
   onClose,
 }: ShareDialogProps) {
-  const currentUserId = null // TODO: Replace with actual user ID when auth is re-implemented
+  const currentUserId = useTestUser()
   const permissions = useQuery(api.permissions.list, { noteId })
   const note = useQuery(api.notes.get, { noteId })
   const revokePermission = useMutation(api.permissions.revoke)

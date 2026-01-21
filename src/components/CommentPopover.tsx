@@ -336,7 +336,6 @@ export default function CommentPopover({
       ) : (
         <div className="p-4 border-t border-base-300 bg-base-200/30">
           <div className="alert alert-info">
-            <LogIn size={20} />
             <div className="flex-1">
               <h3 className="font-bold text-sm">Sign in to comment</h3>
               <div className="text-xs">You need to be signed in to add comments.</div>
