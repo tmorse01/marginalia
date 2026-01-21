@@ -16,6 +16,7 @@ import { api } from "../../convex/_generated/api";
  * Used when Convex is not available or flag hasn't been set in Convex
  */
 const ENABLE_INLINE_EDITOR_ENV = import.meta.env.VITE_ENABLE_INLINE_EDITOR === 'true';
+const ENABLE_AI_CHAT_ENV = import.meta.env.VITE_ENABLE_AI_CHAT === 'true';
 
 /**
  * Hook to get the inline editor feature flag from Convex
@@ -62,9 +63,61 @@ export function useInlineEditorFlag(): boolean {
 }
 
 /**
+ * Hook to get the AI chat feature flag from Convex
+ * Falls back to environment variable if Convex flag is not set
+ * 
+ * During SSR, always uses environment variable since ConvexProvider is not available
+ * 
+ * Note: Requires `npx convex dev` to be running to generate the API types
+ * The hook will work at runtime even if types aren't generated yet
+ * 
+ * @returns boolean - true if AI chat should be enabled
+ */
+export function useAIChatFlag(): boolean {
+  // During SSR (server-side rendering), window is undefined
+  // We must use the env var fallback since ConvexProvider isn't available yet
+  const isBrowser = typeof window !== 'undefined';
+  
+  if (!isBrowser) {
+    // SSR: use env var only
+    return ENABLE_AI_CHAT_ENV;
+  }
+
+  // Try to get flag from Convex (runtime, can be toggled without rebuild)
+  // Type assertion needed until Convex generates API types (run `npx convex dev`)
+  const featureFlagsAPI = (api as any).featureFlags;
+  
+  if (!featureFlagsAPI?.get) {
+    // Convex API not available yet, use env var
+    return ENABLE_AI_CHAT_ENV;
+  }
+
+  // Only call useQuery in browser environment where ConvexProvider is available
+  const convexFlag = useQuery(featureFlagsAPI.get, {
+    key: "ai_chat",
+    defaultValue: ENABLE_AI_CHAT_ENV, // Fallback to env var
+  });
+
+  // If Convex query is loading or failed, fall back to env var
+  if (convexFlag === undefined) {
+    return ENABLE_AI_CHAT_ENV;
+  }
+
+  return convexFlag;
+}
+
+/**
  * Build-time constant for use outside React components
  * Uses environment variable only (for SSR or non-React code)
  * 
  * For React components, prefer useInlineEditorFlag() hook
  */
 export const ENABLE_INLINE_EDITOR = ENABLE_INLINE_EDITOR_ENV;
+
+/**
+ * Build-time constant for AI chat (for use outside React components)
+ * Uses environment variable only (for SSR or non-React code)
+ * 
+ * For React components, prefer useAIChatFlag() hook
+ */
+export const ENABLE_AI_CHAT = ENABLE_AI_CHAT_ENV;

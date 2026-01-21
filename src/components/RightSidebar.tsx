@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAIChatFlag } from '../lib/feature-flags'
 import InlineCommentsPanel from './InlineCommentsPanel'
 import AIChatPanel from './AIChatPanel'
 import NoteMetadataPanel from './NoteMetadataPanel'
@@ -65,6 +66,7 @@ export default function RightSidebar({
   onTabChange,
   onApplyAISuggestion,
 }: RightSidebarProps) {
+  const aiChatEnabled = useAIChatFlag()
   const [internalActiveTab, setInternalActiveTab] = useState<'comments' | 'ai' | 'metadata'>('comments')
   
   // Use controlled tab if provided, otherwise use internal state
@@ -77,6 +79,13 @@ export default function RightSidebar({
       setActiveTab('comments')
     }
   }, [selectedLine, activeTab, setActiveTab])
+
+  // If AI chat is disabled and user is on AI tab, switch to comments
+  useEffect(() => {
+    if (!aiChatEnabled && activeTab === 'ai') {
+      setActiveTab('comments')
+    }
+  }, [aiChatEnabled, activeTab, setActiveTab])
 
   return (
     <aside className="w-full bg-base-200 border border-base-300 rounded-lg flex flex-col">
@@ -94,7 +103,7 @@ export default function RightSidebar({
             showAllComments={showAllComments}
           />
         )}
-        {activeTab === 'ai' && (
+        {activeTab === 'ai' && aiChatEnabled && (
           <AIChatPanel
             noteId={noteId}
             noteContent={content}

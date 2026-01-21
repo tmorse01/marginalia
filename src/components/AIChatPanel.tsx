@@ -3,6 +3,7 @@ import { Send, Bot, User, Trash2, MessageSquare, Edit, ChevronDown, ChevronUp, C
 import { useAction, useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { useTestUser } from '../lib/useTestUser'
+import { useAIChatFlag } from '../lib/feature-flags'
 import MarkdownViewer from './MarkdownViewer'
 import type { Id } from 'convex/_generated/dataModel'
 
@@ -31,6 +32,7 @@ export default function AIChatPanel({
   noteTitle,
   onApplySuggestion,
 }: AIChatPanelProps) {
+  const aiChatEnabled = useAIChatFlag()
   const currentUserId = useTestUser()
   // Type assertions needed until Convex generates API types (run `npx convex dev`)
   const chatAction = useAction((api as any).ai?.chat)
@@ -255,6 +257,19 @@ export default function AIChatPanel({
       e.preventDefault()
       handleSend()
     }
+  }
+
+  // Feature flag check - hide AI chat if disabled
+  if (!aiChatEnabled) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center p-6">
+        <Bot size={48} className="text-primary mx-auto mb-4 opacity-50" />
+        <h3 className="font-bold text-lg mb-2">AI Assistant</h3>
+        <p className="text-sm text-base-content/60 mb-4 text-center">
+          AI chat is currently disabled
+        </p>
+      </div>
+    )
   }
 
   if (currentUserId === undefined) {

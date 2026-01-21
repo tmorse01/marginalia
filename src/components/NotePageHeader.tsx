@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Edit, Eye, Share2, MessageSquare, Home, ChevronRight, Bot, Info } from 'lucide-react'
+import { useAIChatFlag } from '../lib/feature-flags'
 import PresenceIndicator from './PresenceIndicator'
 import type { Id } from 'convex/_generated/dataModel'
 
@@ -56,6 +57,7 @@ export default function NotePageHeader({
   currentUserId,
   activeUsers,
 }: NotePageHeaderProps) {
+  const aiChatEnabled = useAIChatFlag()
   // Get folder path
   const folderPath = note.folderId
     ? useQuery(api.folders.getPath, { folderId: note.folderId })
@@ -173,13 +175,15 @@ export default function NotePageHeader({
           >
             <MessageSquare size={18} />
           </button>
-          <button
-            onClick={onAIChatClick}
-            className={`btn btn-sm btn-circle tooltip tooltip-bottom ${showSidebar && activeTab === 'ai' ? 'btn-primary' : 'btn-ghost'}`}
-            data-tip="AI Chat"
-          >
-            <Bot size={18} />
-          </button>
+          {aiChatEnabled && (
+            <button
+              onClick={onAIChatClick}
+              className={`btn btn-sm btn-circle tooltip tooltip-bottom ${showSidebar && activeTab === 'ai' ? 'btn-primary' : 'btn-ghost'}`}
+              data-tip="AI Chat"
+            >
+              <Bot size={18} />
+            </button>
+          )}
           <button
             onClick={onMetadataClick}
             className={`btn btn-sm btn-circle tooltip tooltip-bottom ${showSidebar && activeTab === 'metadata' ? 'btn-primary' : 'btn-ghost'}`}
