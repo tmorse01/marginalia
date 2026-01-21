@@ -1,34 +1,13 @@
-import { Link, useNavigate } from '@tanstack/react-router'
-import { Menu, X, PanelLeft, LogIn } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { Menu, X, PanelLeft } from 'lucide-react'
 import { useState } from 'react'
-import { useConvexAuth } from 'convex/react'
-import { useAuthActions } from '@convex-dev/auth/react'
 import { useSidebar } from '../lib/sidebar-context'
-import { useCurrentUser } from '../lib/auth'
-import { useAuthFlag } from '../lib/feature-flags'
 import Logo from './Logo'
-import ProfileDropdown from './ProfileDropdown'
 import ThemeSelector from './ThemeSelector'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
-  const navigate = useNavigate()
   const { isCollapsed, toggleCollapse, isLandingPage } = useSidebar()
-  const authEnabled = useAuthFlag()
-  const userId = useCurrentUser()
-  
-  // Only use auth hooks if auth is enabled
-  const authActions = authEnabled ? useAuthActions() : null
-  
-  const handleSignIn = () => {
-    if (!authEnabled) {
-      console.warn('[AUTH] Sign in attempted but auth is disabled')
-      return
-    }
-    
-    // Navigate to sign-in page
-    navigate({ to: '/signin' as any })
-  }
 
   return (
     <>
@@ -58,19 +37,6 @@ export default function Header() {
           </button>
           <div className="hidden lg:flex lg:items-center lg:gap-4">
             <ThemeSelector />
-            {userId === undefined ? (
-              <span className="loading loading-spinner loading-sm"></span>
-            ) : userId === null ? (
-              <button
-                onClick={handleSignIn}
-                className="btn btn-primary btn-sm gap-2"
-              >
-                <LogIn size={16} />
-                Sign In
-              </button>
-            ) : (
-              <ProfileDropdown />
-            )}
           </div>
         </div>
       </header>
@@ -94,23 +60,6 @@ export default function Header() {
               </button>
             </div>
             <nav className="flex-1 p-4 overflow-y-auto">
-              <div className="mb-4">
-                {userId === undefined ? (
-                  <div className="flex justify-center">
-                    <span className="loading loading-spinner loading-sm"></span>
-                  </div>
-                ) : userId === null ? (
-                  <button
-                    onClick={handleSignIn}
-                    className="btn btn-primary btn-sm w-full gap-2"
-                  >
-                    <LogIn size={16} />
-                    Sign In
-                  </button>
-                ) : (
-                  <ProfileDropdown />
-                )}
-              </div>
               <div className="mt-4 pt-4 border-t border-base-300">
                 <div className="text-sm font-medium mb-2 px-2">Theme</div>
                 <div className="px-2">

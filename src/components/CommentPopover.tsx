@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { useAuthActions } from '@convex-dev/auth/react'
 import {
   X,
   Check,
@@ -10,7 +9,6 @@ import {
   Trash2,
   Send,
   AlertTriangle,
-  LogIn,
 } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
 import AlertToast from './AlertToast'
@@ -59,7 +57,6 @@ export default function CommentPopover({
   currentLineContent,
   onClose,
 }: CommentPopoverProps) {
-  const { signIn } = useAuthActions()
   const createComment = useMutation(api.comments.create)
   const replyToComment = useMutation(api.comments.reply)
   const resolveComment = useMutation(api.comments.resolve)
@@ -344,7 +341,7 @@ export default function CommentPopover({
               <h3 className="font-bold text-sm">Sign in to comment</h3>
               <div className="text-xs">You need to be signed in to add comments.</div>
               <button
-                onClick={() => signIn('github')}
+                onClick={() => {}}
                 className="btn btn-primary btn-sm mt-2"
               >
                 Sign In

@@ -17,9 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useNavigate } from '@tanstack/react-router'
-import { useAuthActions } from '@convex-dev/auth/react'
-import { Plus, Folder, FileText, Search, X, LogIn } from 'lucide-react'
-import { useCurrentUser } from '../../lib/auth'
+import { Plus, Folder, FileText, Search, X } from 'lucide-react'
 import AlertToast from '../AlertToast'
 import FileTreeItem from './FileTreeItem'
 import type {
@@ -59,10 +57,8 @@ interface TreeNode {
 }
 
 export default function FileTree() {
-  const userId = useCurrentUser()
-  const { signIn } = useAuthActions()
-  const folders = useQuery(api.folders.list, userId ? { userId } : 'skip')
-  const notes = useQuery(api.notes.listUserNotes, userId ? { userId } : 'skip')
+  const folders = useQuery(api.folders.list, 'skip')
+  const notes = useQuery(api.notes.listUserNotes, 'skip')
   const moveNote = useMutation(api.notes.moveToFolder)
   const moveFolder = useMutation(api.folders.move)
   const reorderNote = useMutation(api.notes.reorder)
@@ -117,7 +113,7 @@ export default function FileTree() {
 
   // Build tree structure
   const tree = useMemo(() => {
-    if (!folders || !notes || !userId) return []
+    if (!folders || !notes) return []
 
     const folderMap = new Map<string, TreeNode>()
     const noteMap = new Map<string, TreeNode>()
@@ -565,13 +561,11 @@ export default function FileTree() {
   }
 
   const handleNewNote = async (parentFolderId?: Id<'folders'>) => {
-    if (!userId) return
-
     try {
       const noteId = await createNote({
         title: 'New Note',
         content: '',
-        ownerId: userId,
+        ownerId: '' as any, // TODO: Replace with actual user ID when auth is re-implemented
         folderId: parentFolderId,
       })
       navigate({ to: '/notes/$noteId', params: { noteId } })
@@ -584,12 +578,10 @@ export default function FileTree() {
   }
 
   const handleNewFolder = async (parentFolderId?: Id<'folders'>) => {
-    if (!userId) return
-
     try {
       await createFolder({
         name: 'New Folder',
-        ownerId: userId,
+        ownerId: '' as any, // TODO: Replace with actual user ID when auth is re-implemented
         parentId: parentFolderId,
       })
       // Expand parent folder to show new folder
@@ -640,38 +632,7 @@ export default function FileTree() {
     )
   }
 
-  if (userId === undefined) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <span className="loading loading-spinner"></span>
-      </div>
-    )
-  }
 
-  // Show sign-in prompt for non-logged-in users
-  if (userId === null) {
-    return (
-      <div className="file-tree">
-        <div className="border-b border-base-300">
-          <div className="flex items-center justify-between px-2 py-2">
-            <h2 className="text-sm font-semibold text-base-content/70">Files</h2>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center h-64 p-4 text-center">
-          <p className="text-sm text-base-content/60 mb-4">
-            Sign in to create notes and folders
-          </p>
-          <button
-            onClick={() => signIn('github')}
-            className="btn btn-primary btn-sm gap-2"
-          >
-            <LogIn size={16} />
-            Sign In
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   if (folders === undefined || notes === undefined) {
     return (
@@ -699,7 +660,6 @@ export default function FileTree() {
                 onClick={() => handleNewNote()}
                 className="btn btn-ghost btn-xs btn-square"
                 title="New Note"
-                disabled={!userId}
               >
                 <Plus className="size-[1.2em]" strokeWidth={2.5} />
               </button>
@@ -707,7 +667,6 @@ export default function FileTree() {
                 onClick={() => handleNewFolder()}
                 className="btn btn-ghost btn-xs btn-square"
                 title="New Folder"
-                disabled={!userId}
               >
                 <Folder className="size-[1.2em]" strokeWidth={2.5} />
               </button>

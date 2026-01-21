@@ -23,19 +23,3 @@ if (convexUrl && convexUrl.endsWith('.convex.site')) {
 
 export const convex = new ConvexReactClient(convexUrl);
 
-// Export auth URL separately (for HTTP Actions/OAuth redirects)
-// This should be your .convex.site URL (different from the .convex.cloud client URL)
-const authUrl = import.meta.env.VITE_CONVEX_AUTH_URL || "";
-
-if (!authUrl && convexUrl) {
-  // Warn if auth URL is not set but we have a client URL
-  // This is OK if they're the same, but typically they're different
-  console.warn(
-    "VITE_CONVEX_AUTH_URL is not set. Falling back to VITE_CONVEX_URL for auth redirects. " +
-    "If your HTTP Actions URL (.convex.site) differs from your deployment URL (.convex.cloud), " +
-    "set VITE_CONVEX_AUTH_URL to your .convex.site URL."
-  );
-}
-
-export const convexAuthUrl = authUrl || convexUrl;
-

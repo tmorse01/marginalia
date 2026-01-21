@@ -3,7 +3,6 @@ import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Plus, FileText, Clock, Users, Search, Filter } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useCurrentUser } from '../lib/auth'
 import { useSidebar } from '../lib/sidebar-context'
 import LandingPage from '../components/landing/LandingPage'
 import NoteCard from '../components/NoteCard'
@@ -16,16 +15,10 @@ export const Route = createFileRoute('/')({
 type SortOption = 'updated' | 'created' | 'alphabetical' | 'alphabetical-reverse'
 
 function HomePage() {
-  const userId = useCurrentUser()
+  const userId = null // TODO: Replace with actual user ID when auth is re-implemented
   
-  const notes = useQuery(
-    api.notes.listUserNotes,
-    userId ? { userId } : 'skip'
-  )
-  const folders = useQuery(
-    api.folders.list,
-    userId ? { userId } : 'skip'
-  )
+  const notes = useQuery(api.notes.listUserNotes, 'skip')
+  const folders = useQuery(api.folders.list, 'skip')
   const { setIsLandingPage } = useSidebar()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -111,19 +104,8 @@ function HomePage() {
     return new Map(folders.map((f: { _id: Id<'folders'>; name: string }) => [f._id, f.name]))
   }, [folders])
 
-  // Show loading state while user is being created/fetched
-  if (userId === undefined) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <span className="loading loading-spinner loading-lg"></span>
-        </div>
-      </div>
-    )
-  }
-
-  // Show landing page for non-logged-in users or first-time users (no notes yet)
-  if (userId === null || (notes !== undefined && notes.length === 0)) {
+  // Show landing page for first-time users (no notes yet)
+  if (notes !== undefined && notes.length === 0) {
     // Use a wrapper that removes the MainContent padding to match landing layout
     return (
       <div className="-mx-4 -my-8">

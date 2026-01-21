@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Home, ChevronRight, Folder, FileText, Plus } from 'lucide-react'
-import { useCurrentUser } from '../../lib/auth'
 import type { Id } from 'convex/_generated/dataModel'
 
 export const Route = createFileRoute('/folders/$folderId')({
@@ -12,21 +11,10 @@ export const Route = createFileRoute('/folders/$folderId')({
 function FolderView() {
   const { folderId } = Route.useParams()
   const navigate = useNavigate()
-  const currentUserId = useCurrentUser()
+  const currentUserId = null // TODO: Replace with actual user ID when auth is re-implemented
   const folder = useQuery(api.folders.get, { folderId: folderId as any })
   const folderPath = useQuery(api.folders.getPath, { folderId: folderId as any })
-  const contents = useQuery(
-    api.folders.getContents,
-    currentUserId ? { folderId: folderId as any, userId: currentUserId } : 'skip'
-  )
-
-  if (currentUserId === undefined) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    )
-  }
+  const contents = useQuery(api.folders.getContents, 'skip')
 
   if (folder === undefined || contents === undefined) {
     return (

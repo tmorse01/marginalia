@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { useAuthActions } from '@convex-dev/auth/react'
-import { Check, Copy, Share2, UserPlus, X, LogIn } from 'lucide-react'
-import { useCurrentUser } from '../lib/auth'
+import { Check, Copy, Share2, UserPlus, X } from 'lucide-react'
 import AlertToast from './AlertToast'
 import type { Id } from 'convex/_generated/dataModel'
 
@@ -18,8 +16,7 @@ export default function ShareDialog({
   isOpen,
   onClose,
 }: ShareDialogProps) {
-  const currentUserId = useCurrentUser()
-  const { signIn } = useAuthActions()
+  const currentUserId = null // TODO: Replace with actual user ID when auth is re-implemented
   const permissions = useQuery(api.permissions.list, { noteId })
   const note = useQuery(api.notes.get, { noteId })
   const revokePermission = useMutation(api.permissions.revoke)
@@ -68,18 +65,10 @@ export default function ShareDialog({
   }
 
   const handleMakePublic = async () => {
-    if (!currentUserId) {
-      signIn('github')
-      return
-    }
     await updateNote({ noteId, visibility: 'public' })
   }
 
   const handleRevoke = async (userId: Id<'users'>) => {
-    if (!currentUserId) {
-      signIn('github')
-      return
-    }
     await revokePermission({ noteId, userId })
   }
 
@@ -100,21 +89,6 @@ export default function ShareDialog({
             </button>
           </div>
 
-          {currentUserId === undefined && (
-            <div className="alert alert-info mb-4">
-              <LogIn size={20} />
-              <div>
-                <h3 className="font-bold">Sign in to share notes</h3>
-                <div className="text-xs">You need to be signed in to share notes with others.</div>
-                <button
-                  onClick={() => signIn('github')}
-                  className="btn btn-primary btn-sm mt-2"
-                >
-                  Sign In
-                </button>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-6">
             {/* Make Public Section */}

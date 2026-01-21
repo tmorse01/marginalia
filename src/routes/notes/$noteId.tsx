@@ -2,8 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { useAuthActions } from '@convex-dev/auth/react'
-import { HelpCircle, LogIn } from 'lucide-react'
+import { HelpCircle } from 'lucide-react'
 import NoteEditor from '../../components/NoteEditor'
 import CommentableContent from '../../components/CommentableContent'
 import GeneralComments from '../../components/GeneralComments'
@@ -13,7 +12,6 @@ import LiveCursorOverlay from '../../components/LiveCursorOverlay'
 import RightSidebar from '../../components/RightSidebar'
 import NotePageHeader from '../../components/NotePageHeader'
 import MarkdownCheatSheetModal from '../../components/MarkdownCheatSheetModal'
-import { useCurrentUser } from '../../lib/auth'
 import { useNotePresence } from '../../lib/presence'
 
 export const Route = createFileRoute('/notes/$noteId')({
@@ -27,8 +25,7 @@ function NotePage() {
   const navigate = useNavigate()
   const note = useQuery(api.notes.get, { noteId: noteId as any })
   const updateNote = useMutation(api.notes.update)
-  const currentUserId = useCurrentUser()
-  const { signIn } = useAuthActions()
+  const currentUserId = null // TODO: Replace with actual user ID when auth is re-implemented
   const activeUsers = useQuery(api.presence.getActiveUsers, { noteId: noteId as any })
   const allComments = useQuery(api.comments.listByNote, { noteId: noteId as any })
   
@@ -133,23 +130,10 @@ function NotePage() {
       {/* Page Header */}
       <div className="w-full">
         <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 sm:px-4 lg:px-6">
-          {currentUserId === undefined && (
-            <div className="alert alert-info mb-4">
-              <LogIn size={20} />
-              <div>
-                <h3 className="font-bold">Sign in to edit this note</h3>
-                <div className="text-xs">You can view the note, but you'll need to sign in to make changes.</div>
-              </div>
-            </div>
-          )}
           <NotePageHeader
             note={note}
             isEditing={isEditing}
             onEditToggle={() => {
-              if (currentUserId === undefined) {
-                signIn('github')
-                return
-              }
               setIsEditing(!isEditing)
             }}
             showSidebar={showSidebar}

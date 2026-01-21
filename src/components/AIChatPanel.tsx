@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Send, Bot, User, Trash2, MessageSquare, Edit, ChevronDown, ChevronUp, Check, LogIn } from 'lucide-react'
 import { useAction, useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { useAuthActions } from '@convex-dev/auth/react'
-import { useCurrentUser } from '../lib/auth'
 import MarkdownViewer from './MarkdownViewer'
 import type { Id } from 'convex/_generated/dataModel'
 
@@ -32,8 +30,7 @@ export default function AIChatPanel({
   noteTitle,
   onApplySuggestion,
 }: AIChatPanelProps) {
-  const currentUserId = useCurrentUser()
-  const { signIn } = useAuthActions()
+  const currentUserId = null // TODO: Replace with actual user ID when auth is re-implemented
   // Type assertions needed until Convex generates API types (run `npx convex dev`)
   const chatAction = useAction((api as any).ai?.chat)
   const addMessageMutation = useMutation((api as any).aiConversations?.addMessage)
@@ -268,7 +265,7 @@ export default function AIChatPanel({
           Sign in to use the AI assistant
         </p>
         <button
-          onClick={() => signIn('github')}
+          onClick={() => {}}
           className="btn btn-primary btn-sm gap-2"
         >
           <LogIn size={16} />

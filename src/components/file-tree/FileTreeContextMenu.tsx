@@ -3,7 +3,6 @@ import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Folder, Trash2, Share2, Copy, Move, Edit, Plus, Home } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
-import { useCurrentUser } from '../../lib/auth'
 import ShareDialog from '../ShareDialog'
 import ConfirmDialog from '../ConfirmDialog'
 import AlertToast from '../AlertToast'
@@ -45,7 +44,7 @@ export default function FileTreeContextMenu({
   const updateFolder = useMutation(api.folders.update)
   const moveNote = useMutation(api.notes.moveToFolder)
   const moveFolder = useMutation(api.folders.move)
-  const currentUserId = useCurrentUser()
+  const currentUserId = null // TODO: Replace with actual user ID when auth is re-implemented
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [showMoveDialog, setShowMoveDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
