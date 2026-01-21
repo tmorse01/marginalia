@@ -17,9 +17,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useNavigate } from '@tanstack/react-router'
+import { useAuthActions } from '@convex-dev/auth/react'
 import { Plus, Folder, FileText, Search, X, LogIn } from 'lucide-react'
 import { useCurrentUser } from '../../lib/auth'
-import { useAuthActions } from '@convex-dev/auth/react'
 import AlertToast from '../AlertToast'
 import FileTreeItem from './FileTreeItem'
 import type {

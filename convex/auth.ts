@@ -18,6 +18,51 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
   ],
+  callbacks: {
+    /**
+     * Custom redirect callback to support multiple domains:
+     * - localhost (for local development) - automatically allowed
+     * - Deployed dev environment (e.g., Netlify preview) - via ALLOWED_DEV_URLS
+     * - Production environment - via ALLOWED_DEV_URLS or SITE_URL
+     * 
+     * Set ALLOWED_DEV_URLS environment variable to allow additional domains.
+     * Format: comma-separated URLs, e.g., "http://localhost:3000,https://dev-marginalia.netlify.app,https://marginalia.netlify.app"
+     */
+    async redirect({ redirectTo }) {
+      const SITE_URL = process.env.SITE_URL || "";
+      
+      // Allow relative paths - these will be resolved relative to SITE_URL
+      if (redirectTo && redirectTo.startsWith("/")) {
+        return `${SITE_URL}${redirectTo}`;
+      }
+
+      // Allow redirects to SITE_URL (Convex HTTP Actions URL)
+      if (redirectTo && SITE_URL && redirectTo.startsWith(SITE_URL)) {
+        return redirectTo;
+      }
+
+      // Allow localhost for local development (any port)
+      if (redirectTo && redirectTo.startsWith("http://localhost:")) {
+        return redirectTo;
+      }
+
+      // Allow additional URLs from environment variable
+      // Format: "http://localhost:3000,https://dev-marginalia.netlify.app,https://marginalia.netlify.app"
+      const allowedDevUrls = process.env.ALLOWED_DEV_URLS || "";
+      if (allowedDevUrls && redirectTo) {
+        const allowedUrls = allowedDevUrls.split(",").map(url => url.trim());
+        for (const allowedUrl of allowedUrls) {
+          if (redirectTo.startsWith(allowedUrl)) {
+            console.log('[AUTH DEBUG] Redirecting to allowed URL:', redirectTo);
+            return redirectTo;
+          }
+        }
+      }
+
+      // Fallback to SITE_URL
+      return SITE_URL || "/";
+    },
+  },
 });
 
 /**

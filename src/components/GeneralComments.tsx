@@ -42,7 +42,7 @@ interface CommentWithReplies extends CommentData {
 interface GeneralCommentsProps {
   noteId: Id<'notes'>
   threads: Array<CommentWithReplies>
-  currentUserId?: Id<'users'>
+  currentUserId?: Id<'users'> | null
   noteOwnerId?: Id<'users'>
 }
 

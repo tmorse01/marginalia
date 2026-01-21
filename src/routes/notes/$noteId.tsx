@@ -133,7 +133,7 @@ function NotePage() {
       {/* Page Header */}
       <div className="w-full">
         <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 sm:px-4 lg:px-6">
-          {currentUserId === null && (
+          {currentUserId === undefined && (
             <div className="alert alert-info mb-4">
               <LogIn size={20} />
               <div>
@@ -146,7 +146,7 @@ function NotePage() {
             note={note}
             isEditing={isEditing}
             onEditToggle={() => {
-              if (currentUserId === null) {
+              if (currentUserId === undefined) {
                 signIn('github')
                 return
               }

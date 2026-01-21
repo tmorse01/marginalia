@@ -37,7 +37,7 @@ interface NotePageHeaderProps {
   onShareClick: () => void
   onTitleChange: (title: string) => void
   noteId: Id<'notes'>
-  currentUserId?: Id<'users'>
+  currentUserId?: Id<'users'> | null
   activeUsers?: Array<PresenceEntry>
 }
 

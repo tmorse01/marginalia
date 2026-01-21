@@ -100,7 +100,7 @@ export default function ShareDialog({
             </button>
           </div>
 
-          {currentUserId === null && (
+          {currentUserId === undefined && (
             <div className="alert alert-info mb-4">
               <LogIn size={20} />
               <div>

@@ -42,7 +42,7 @@ interface RightSidebarProps {
   commentsByLine: Partial<Record<number, Array<CommentWithReplies>>>
   selectedLine: number | null
   onLineSelect: (lineNumber: number | null) => void
-  currentUserId?: Id<'users'>
+  currentUserId?: Id<'users'> | null
   noteOwnerId?: Id<'users'>
   content: string
   showAllComments?: boolean

@@ -13,7 +13,7 @@ interface PresenceEntry {
 interface LiveCursorOverlayProps {
   content: string
   entries: Array<PresenceEntry>
-  currentUserId?: Id<'users'>
+  currentUserId?: Id<'users'> | null
 }
 
 const CURSOR_COLORS = [

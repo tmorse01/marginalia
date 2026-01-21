@@ -5,8 +5,6 @@ import { useAuthActions } from '@convex-dev/auth/react'
 import { api } from 'convex/_generated/api'
 import { useCurrentUser } from '../lib/auth'
 
-const IS_DEV = false // Disabled for auth testing
-
 export default function ProfileDropdown() {
   const userId = useCurrentUser()
   const user = useQuery(
@@ -16,19 +14,14 @@ export default function ProfileDropdown() {
   const { signOut } = useAuthActions()
 
   // Don't render if user is not authenticated (should be handled by parent)
-  if (userId === null || userId === undefined) {
+  if (userId === undefined) {
     return null
   }
 
   const displayName = user?.name || user?.email || 'User'
 
   const handleSignOut = async () => {
-    if (!IS_DEV) {
       await signOut()
-    } else {
-      // In dev mode, just reload to reset state
-      window.location.reload()
-    }
   }
 
   return (
@@ -46,9 +39,6 @@ export default function ProfileDropdown() {
             <li className="px-2 py-1">
               <div className="text-sm font-semibold">{user.name}</div>
               <div className="text-xs text-base-content/60">{user.email}</div>
-              {IS_DEV && (
-                <div className="text-xs text-primary mt-1">Dev Mode (Premium)</div>
-              )}
             </li>
             <li>
               <div className="divider my-1"></div>
@@ -60,7 +50,6 @@ export default function ProfileDropdown() {
             Settings
           </Link>
         </li>
-        {!IS_DEV && (
           <li>
             <button
               onClick={handleSignOut}
@@ -70,7 +59,6 @@ export default function ProfileDropdown() {
               Sign out
             </button>
           </li>
-        )}
       </ul>
     </div>
   )

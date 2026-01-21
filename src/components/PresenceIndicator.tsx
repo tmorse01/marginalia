@@ -12,7 +12,7 @@ interface PresenceEntry {
 
 interface PresenceIndicatorProps {
   noteId: Id<'notes'>
-  currentUserId?: Id<'users'>
+  currentUserId?: Id<'users'> | null
   activeUsers?: Array<PresenceEntry>
 }
 

@@ -259,7 +259,7 @@ export default function AIChatPanel({
     }
   }
 
-  if (currentUserId === null) {
+  if (currentUserId === undefined) {
     return (
       <div className="flex flex-col h-full items-center justify-center p-6">
         <Bot size={48} className="text-primary mx-auto mb-4 opacity-50" />

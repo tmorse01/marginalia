@@ -24,7 +24,7 @@ interface CommentableContentProps {
   content: string
   noteId: Id<'notes'>
   commentsByLine: Partial<Record<number, Array<CommentWithReplies>>>
-  currentUserId?: Id<'users'>
+  currentUserId?: Id<'users'> | null
   noteOwnerId?: Id<'users'>
   selectedLine?: number | null
   onLineSelect?: (lineNumber: number | null) => void

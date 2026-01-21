@@ -22,12 +22,23 @@ const ENABLE_AUTH_ENV = import.meta.env.VITE_ENABLE_AUTH === 'true';
  * Hook to get the inline editor feature flag from Convex
  * Falls back to environment variable if Convex flag is not set
  * 
+ * During SSR, always uses environment variable since ConvexProvider is not available
+ * 
  * Note: Requires `npx convex dev` to be running to generate the API types
  * The hook will work at runtime even if types aren't generated yet
  * 
  * @returns boolean - true if inline editor should be enabled
  */
 export function useInlineEditorFlag(): boolean {
+  // During SSR (server-side rendering), window is undefined
+  // We must use the env var fallback since ConvexProvider isn't available yet
+  const isBrowser = typeof window !== 'undefined';
+  
+  if (!isBrowser) {
+    // SSR: use env var only
+    return ENABLE_INLINE_EDITOR_ENV;
+  }
+
   // Try to get flag from Convex (runtime, can be toggled without rebuild)
   // Type assertion needed until Convex generates API types (run `npx convex dev`)
   const featureFlagsAPI = (api as any).featureFlags;
@@ -37,6 +48,7 @@ export function useInlineEditorFlag(): boolean {
     return ENABLE_INLINE_EDITOR_ENV;
   }
 
+  // Only call useQuery in browser environment where ConvexProvider is available
   const convexFlag = useQuery(featureFlagsAPI.get, {
     key: "inline_editor",
     defaultValue: ENABLE_INLINE_EDITOR_ENV, // Fallback to env var
@@ -54,9 +66,20 @@ export function useInlineEditorFlag(): boolean {
  * Hook to get the auth feature flag from Convex
  * Falls back to environment variable if Convex flag is not set
  * 
+ * During SSR, always uses environment variable since ConvexProvider is not available
+ * 
  * @returns boolean - true if auth should be enabled (defaults to false)
  */
 export function useAuthFlag(): boolean {
+  // During SSR (server-side rendering), window is undefined
+  // We must use the env var fallback since ConvexProvider isn't available yet
+  const isBrowser = typeof window !== 'undefined';
+  
+  if (!isBrowser) {
+    // SSR: use env var only
+    return ENABLE_AUTH_ENV;
+  }
+
   const featureFlagsAPI = (api as any).featureFlags;
   
   if (!featureFlagsAPI?.get) {
@@ -64,6 +87,7 @@ export function useAuthFlag(): boolean {
     return ENABLE_AUTH_ENV;
   }
 
+  // Only call useQuery in browser environment where ConvexProvider is available
   const convexFlag = useQuery(featureFlagsAPI.get, {
     key: "auth",
     defaultValue: ENABLE_AUTH_ENV, // Fallback to env var (defaults to false)

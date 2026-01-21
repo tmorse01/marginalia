@@ -9,7 +9,7 @@ import AppLayout from '../components/AppLayout'
 import LandingLayout from '../components/LandingLayout'
 import { SidebarProvider } from '../lib/sidebar-context'
 import { convex } from '../lib/convex'
-import { useAuthFlag } from '../lib/feature-flags'
+import { ENABLE_AUTH } from '../lib/feature-flags'
 
 import appCss from '../styles.css?url'
 
@@ -77,7 +77,9 @@ function RootDocumentContent({ children }: { children: React.ReactNode }) {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const authEnabled = useAuthFlag()
+  // Use build-time constant for initial ConvexProvider setup
+  // Once inside ConvexProvider, components can use useAuthFlag() hook
+  const authEnabled = ENABLE_AUTH
   
   // Initialize theme from localStorage or default to dark
   useEffect(() => {

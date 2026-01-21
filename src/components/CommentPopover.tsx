@@ -42,7 +42,7 @@ interface CommentPopoverProps {
   lineNumber: number
   lineContent: string
   threads: Array<CommentWithReplies>
-  currentUserId?: Id<'users'>
+  currentUserId?: Id<'users'> | null
   noteOwnerId?: Id<'users'>
   currentLineContent: string // For drift detection
   onClose: () => void

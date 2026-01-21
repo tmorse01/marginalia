@@ -262,7 +262,7 @@ function HomePage() {
                 <NoteCard
                   key={note._id}
                   note={{ ...note, folderId: note.folderId ?? undefined }}
-                  folderName={note.folderId ? (folderMap.get(note.folderId) as string | undefined) : undefined}
+                  folderName={note.folderId ? folderMap.get(note.folderId) : undefined}
                 />
               ))}
             </div>

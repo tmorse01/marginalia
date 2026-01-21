@@ -18,7 +18,12 @@ export default function SignInPage() {
           <div className="space-y-3">
             <button
               className="btn btn-outline w-full gap-2"
-              onClick={() => signIn('github')}
+              onClick={() => {
+                // Get current frontend URL to redirect back after OAuth
+                // Note: CUSTOM_AUTH_SITE_URL should be set to your frontend URL in Convex env vars
+                const currentUrl = window.location.origin + window.location.pathname
+                signIn('github', { redirectTo: currentUrl })
+              }}
               disabled={isLoading}
             >
               <Github size={20} />
@@ -27,7 +32,12 @@ export default function SignInPage() {
 
             <button
               className="btn btn-outline w-full gap-2"
-              onClick={() => signIn('google')}
+              onClick={() => {
+                // Get current frontend URL to redirect back after OAuth
+                // Note: CUSTOM_AUTH_SITE_URL should be set to your frontend URL in Convex env vars
+                const currentUrl = window.location.origin + window.location.pathname
+                signIn('google', { redirectTo: currentUrl })
+              }}
               disabled={isLoading}
             >
               <Mail size={20} />

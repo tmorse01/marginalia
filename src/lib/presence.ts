@@ -8,7 +8,7 @@ const UPDATE_DEBOUNCE_MS = 200
 
 interface UsePresenceOptions {
   noteId?: Id<'notes'>
-  userId?: Id<'users'>
+  userId?: Id<'users'> | null
   mode: 'editing' | 'viewing'
   cursorStart?: number
   cursorEnd?: number

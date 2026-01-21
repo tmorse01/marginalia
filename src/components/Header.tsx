@@ -2,10 +2,11 @@ import { Link } from '@tanstack/react-router'
 import { Menu, X, PanelLeft, LogIn } from 'lucide-react'
 import { useState } from 'react'
 import { useConvexAuth } from 'convex/react'
+import { useAuthActions } from '@convex-dev/auth/react'
 import { useSidebar } from '../lib/sidebar-context'
 import { useCurrentUser } from '../lib/auth'
-import { useAuthActions } from '@convex-dev/auth/react'
 import { useAuthFlag } from '../lib/feature-flags'
+import { convexAuthUrl } from '../lib/convex'
 import Logo from './Logo'
 import ProfileDropdown from './ProfileDropdown'
 import ThemeSelector from './ThemeSelector'
@@ -47,28 +48,30 @@ export default function Header() {
     }
     
     try {
-      const result = signIn('github')
+      // Get current frontend URL to redirect back after OAuth
+      // Note: For this to work, CUSTOM_AUTH_SITE_URL should be set to your frontend URL
+      // in Convex environment variables (e.g., http://localhost:3000 for local dev)
+      const currentUrl = window.location.origin + window.location.pathname
+      console.log('[AUTH DEBUG] Current URL:', currentUrl)
+      
+      // Sign in with redirectTo parameter to ensure we come back to the frontend
+      // If CUSTOM_AUTH_SITE_URL is not set, this will use SITE_URL (Convex URL) as fallback
+      const result = signIn('github', { redirectTo: currentUrl })
       console.log('[AUTH DEBUG] signIn returned:', result)
       
       // If signIn returns a promise, wait a bit to see if redirect happens
-      if (result && typeof result.then === 'function') {
+      if (typeof result.then === 'function') {
         await Promise.race([
           result,
           new Promise(resolve => setTimeout(resolve, 1000))
         ])
-      } else {
-        // If no redirect happened after a short delay, force it
-        setTimeout(() => {
-          if (document.hasFocus()) {
-            console.log('[AUTH DEBUG] No redirect detected, forcing redirect to GitHub OAuth')
-            window.location.href = 'https://useful-vole-535.convex.site/api/auth/signin/github'
-          }
-        }, 500)
       }
     } catch (error) {
       console.error('[AUTH DEBUG] signIn error:', error)
-      // Fallback: redirect directly to OAuth URL
-      window.location.href = 'https://useful-vole-535.convex.site/api/auth/signin/github'
+      // Fallback: redirect directly to OAuth URL with redirectTo parameter
+      // Use convexAuthUrl which should be the .convex.site HTTP Actions URL
+      const currentUrl = window.location.origin + window.location.pathname
+      window.location.href = `${convexAuthUrl}/api/auth/signin/github?redirectTo=${encodeURIComponent(currentUrl)}`
     }
   }
 

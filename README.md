@@ -104,15 +104,20 @@ This project is configured for Netlify deployment using TanStack Start with the 
 
 3. **Configure Environment Variables**:
    - In Netlify dashboard, go to: **Site settings** → **Build & deploy** → **Environment variables**
-   - Add the following variable:
+   - Add the following variables:
      - **Key**: `VITE_CONVEX_URL`
-     - **Value**: Your Convex deployment URL (e.g., `https://your-project.convex.cloud`)
-     - **Scopes**: Select "All scopes" or at least "Production" and "Deploy previews"
+       - **Value**: Your Convex deployment URL (must end with `.convex.cloud`, e.g., `https://your-project.convex.cloud`)
+       - **Scopes**: Select "All scopes" or at least "Production" and "Deploy previews"
+     - **Key**: `VITE_CONVEX_AUTH_URL` (Optional, for auth/OAuth redirects)
+       - **Value**: Your Convex HTTP Actions URL (ends with `.convex.site`, e.g., `https://your-project.convex.site`)
+       - **Scopes**: Select "All scopes" or at least "Production" and "Deploy previews"
+       - **Note**: If not set, falls back to `VITE_CONVEX_URL`
    
-   To get your Convex URL:
+   To get your Convex URLs:
    - Go to your [Convex Dashboard](https://dashboard.convex.dev)
    - Select your project
-   - Copy the deployment URL from the project settings
+   - **`.convex.cloud` URL**: Copy the deployment URL from the project settings (used for the main Convex client)
+   - **`.convex.site` URL**: This is your HTTP Actions URL (used for OAuth/auth redirects)
 
 4. **Build Settings** (should be auto-detected):
    - **Build command**: `pnpm build`
