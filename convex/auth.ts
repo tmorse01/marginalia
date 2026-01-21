@@ -1,68 +1,33 @@
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
-import GitHub from "@auth/core/providers/github";
-import Google from "@auth/core/providers/google";
+// @ts-ignore - Password provider may not have types in this version
+import { Password } from "@convex-dev/auth/providers/Password";
 import { v } from "convex/values";
 import { query, action, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
-// Configure Convex Auth with OAuth providers
+// Configure Convex Auth with Password provider (username/password authentication)
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
-    }),
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-    }),
-  ],
-  callbacks: {
-    /**
-     * Custom redirect callback to support multiple domains:
-     * - localhost (for local development) - automatically allowed
-     * - Deployed dev environment (e.g., Netlify preview) - via ALLOWED_DEV_URLS
-     * - Production environment - via ALLOWED_DEV_URLS or SITE_URL
-     * 
-     * Set ALLOWED_DEV_URLS environment variable to allow additional domains.
-     * Format: comma-separated URLs, e.g., "http://localhost:3000,https://dev-marginalia.netlify.app,https://marginalia.netlify.app"
-     */
-    async redirect({ redirectTo }) {
-      const SITE_URL = process.env.SITE_URL || "";
-      
-      // Allow relative paths - these will be resolved relative to SITE_URL
-      if (redirectTo && redirectTo.startsWith("/")) {
-        return `${SITE_URL}${redirectTo}`;
-      }
-
-      // Allow redirects to SITE_URL (Convex HTTP Actions URL)
-      if (redirectTo && SITE_URL && redirectTo.startsWith(SITE_URL)) {
-        return redirectTo;
-      }
-
-      // Allow localhost for local development (any port)
-      if (redirectTo && redirectTo.startsWith("http://localhost:")) {
-        return redirectTo;
-      }
-
-      // Allow additional URLs from environment variable
-      // Format: "http://localhost:3000,https://dev-marginalia.netlify.app,https://marginalia.netlify.app"
-      const allowedDevUrls = process.env.ALLOWED_DEV_URLS || "";
-      if (allowedDevUrls && redirectTo) {
-        const allowedUrls = allowedDevUrls.split(",").map(url => url.trim());
-        for (const allowedUrl of allowedUrls) {
-          if (redirectTo.startsWith(allowedUrl)) {
-            console.log('[AUTH DEBUG] Redirecting to allowed URL:', redirectTo);
-            return redirectTo;
-          }
+    Password({
+      // Optional: Customize password validation
+      validatePasswordRequirements: (password: string) => {
+        if (password.length < 8) {
+          return "Password must be at least 8 characters long";
         }
-      }
-
-      // Fallback to SITE_URL
-      return SITE_URL || "/";
-    },
-  },
+        return null; // Password is valid
+      },
+      // Optional: Customize profile creation
+      profile: (params: { email: string; username?: string; password: string }) => {
+        // params contains: email, username, password
+        // You can add custom fields or validation here
+        return {
+          email: params.email,
+          name: params.username || params.email.split("@")[0],
+        };
+      },
+    }) as any,
+  ],
 });
 
 /**
@@ -136,9 +101,9 @@ export const getCurrentUserId = action({
     }
 
     // Extract email and name from auth user
-    // The auth user might have email/name in different fields depending on provider
-    const email = (authUser as any).email || (authUser as any).name || "unknown";
-    const name = (authUser as any).name || (authUser as any).email || "Unknown User";
+    // Password provider stores email and name in the auth user
+    const email = (authUser as any).email || "unknown";
+    const name = (authUser as any).name || (authUser as any).email?.split("@")[0] || "Unknown User";
 
     // Get or create user from identity in our users table
     return await ctx.runMutation(internal.users.getOrCreateUserFromIdentity, {

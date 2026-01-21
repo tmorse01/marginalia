@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SigninRouteImport } from './routes/signin'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,6 +25,11 @@ import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/settings': typeof SettingsRoute
+  '/signin': typeof SigninRoute
   '/folders/$folderId': typeof FoldersFolderIdRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/notes/new': typeof NotesNewRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/settings': typeof SettingsRoute
+  '/signin': typeof SigninRoute
   '/folders/$folderId': typeof FoldersFolderIdRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/notes/new': typeof NotesNewRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/settings': typeof SettingsRoute
+  '/signin': typeof SigninRoute
   '/folders/$folderId': typeof FoldersFolderIdRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/notes/new': typeof NotesNewRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/settings'
+    | '/signin'
     | '/folders/$folderId'
     | '/notes/$noteId'
     | '/notes/new'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/settings'
+    | '/signin'
     | '/folders/$folderId'
     | '/notes/$noteId'
     | '/notes/new'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/settings'
+    | '/signin'
     | '/folders/$folderId'
     | '/notes/$noteId'
     | '/notes/new'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LandingRoute: typeof LandingRoute
   SettingsRoute: typeof SettingsRoute
+  SigninRoute: typeof SigninRoute
   FoldersFolderIdRoute: typeof FoldersFolderIdRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
   NotesNewRoute: typeof NotesNewRoute
@@ -214,6 +227,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -319,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LandingRoute: LandingRoute,
   SettingsRoute: SettingsRoute,
+  SigninRoute: SigninRoute,
   FoldersFolderIdRoute: FoldersFolderIdRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
   NotesNewRoute: NotesNewRoute,

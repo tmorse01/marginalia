@@ -163,10 +163,13 @@ npx convex env ls --prod
 
 ## Important Notes
 
-### SITE_URL
+### SITE_URL (REQUIRED)
+- **MUST be set** - Convex Auth requires this environment variable
 - **Should be the same** for dev and prod (your Convex HTTP Actions URL)
-- This is where OAuth providers redirect after authorization
+- This is where OAuth providers redirect callbacks to (the `.convex.site` URL)
 - Format: `https://your-deployment-name.convex.site`
+- **Used by Convex Auth internally** to generate callback URLs
+- **Also used by our redirect callback** for relative paths and fallback
 
 ### ALLOWED_DEV_URLS (Optional)
 - **Comma-separated list** of frontend URLs allowed for redirects
@@ -191,6 +194,16 @@ You'll need **separate OAuth apps** for dev and prod, or configure your OAuth ap
   - Can add multiple URIs for different environments
 
 ## Troubleshooting
+
+### Issue: "Missing environment variable `SITE_URL`"
+- **Cause**: `SITE_URL` is **required** by Convex Auth
+- **Fix**: Set `SITE_URL` in your Convex deployment:
+  ```bash
+  npx convex env set SITE_URL "https://your-project.convex.site"
+  ```
+- **Note**: `SITE_URL` is different from `ALLOWED_DEV_URLS`:
+  - `SITE_URL` = Where OAuth callbacks go (Convex HTTP Actions URL)
+  - `ALLOWED_DEV_URLS` = Where users are redirected after OAuth (frontend URLs)
 
 ### Issue: "Invalid deployment address: ends with .convex.site"
 - **Cause**: `VITE_CONVEX_URL` is set to a `.convex.site` URL

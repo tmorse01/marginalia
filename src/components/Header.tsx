@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Menu, X, PanelLeft, LogIn } from 'lucide-react'
 import { useState } from 'react'
 import { useConvexAuth } from 'convex/react'
@@ -6,73 +6,28 @@ import { useAuthActions } from '@convex-dev/auth/react'
 import { useSidebar } from '../lib/sidebar-context'
 import { useCurrentUser } from '../lib/auth'
 import { useAuthFlag } from '../lib/feature-flags'
-import { convexAuthUrl } from '../lib/convex'
 import Logo from './Logo'
 import ProfileDropdown from './ProfileDropdown'
 import ThemeSelector from './ThemeSelector'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
+  const navigate = useNavigate()
   const { isCollapsed, toggleCollapse, isLandingPage } = useSidebar()
   const authEnabled = useAuthFlag()
   const userId = useCurrentUser()
   
   // Only use auth hooks if auth is enabled
   const authActions = authEnabled ? useAuthActions() : null
-  const authState = authEnabled ? useConvexAuth() : { isAuthenticated: false }
   
-  const signIn = authActions?.signIn
-  const signOut = authActions?.signOut
-  const { isAuthenticated } = authState
-  
-  const handleSignIn = async () => {
-    if (!authEnabled || !signIn) {
+  const handleSignIn = () => {
+    if (!authEnabled) {
       console.warn('[AUTH] Sign in attempted but auth is disabled')
       return
     }
     
-    console.log('[AUTH DEBUG] ===== SIGN IN CLICKED =====')
-    console.log('[AUTH DEBUG] Current userId:', userId)
-    console.log('[AUTH DEBUG] isAuthenticated:', isAuthenticated)
-    
-    // If somehow authenticated but userId is null, sign out first to reset state
-    if (isAuthenticated && userId === null && signOut) {
-      console.log('[AUTH DEBUG] Auth state mismatch detected, signing out first...')
-      try {
-        await signOut()
-        // Wait a moment for sign out to complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-      } catch (error) {
-        console.error('[AUTH DEBUG] Error signing out:', error)
-      }
-    }
-    
-    try {
-      // Get current frontend URL to redirect back after OAuth
-      // Note: For this to work, CUSTOM_AUTH_SITE_URL should be set to your frontend URL
-      // in Convex environment variables (e.g., http://localhost:3000 for local dev)
-      const currentUrl = window.location.origin + window.location.pathname
-      console.log('[AUTH DEBUG] Current URL:', currentUrl)
-      
-      // Sign in with redirectTo parameter to ensure we come back to the frontend
-      // If CUSTOM_AUTH_SITE_URL is not set, this will use SITE_URL (Convex URL) as fallback
-      const result = signIn('github', { redirectTo: currentUrl })
-      console.log('[AUTH DEBUG] signIn returned:', result)
-      
-      // If signIn returns a promise, wait a bit to see if redirect happens
-      if (typeof result.then === 'function') {
-        await Promise.race([
-          result,
-          new Promise(resolve => setTimeout(resolve, 1000))
-        ])
-      }
-    } catch (error) {
-      console.error('[AUTH DEBUG] signIn error:', error)
-      // Fallback: redirect directly to OAuth URL with redirectTo parameter
-      // Use convexAuthUrl which should be the .convex.site HTTP Actions URL
-      const currentUrl = window.location.origin + window.location.pathname
-      window.location.href = `${convexAuthUrl}/api/auth/signin/github?redirectTo=${encodeURIComponent(currentUrl)}`
-    }
+    // Navigate to sign-in page
+    navigate({ to: '/signin' as any })
   }
 
   return (
