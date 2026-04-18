@@ -1,8 +1,15 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, beforeEach, it, vi } from 'vitest'
+import { useTestUser } from '../useTestUser'
 
-const mockGetOrCreateUserFromEmail = vi.fn()
-const mockUseMutation = vi.fn(() => mockGetOrCreateUserFromEmail)
+const { mockGetOrCreateUserFromEmail, mockUseMutation } = vi.hoisted(() => {
+  const getOrCreateUserFromEmail = vi.fn()
+  const useMutation = vi.fn(() => getOrCreateUserFromEmail)
+  return {
+    mockGetOrCreateUserFromEmail: getOrCreateUserFromEmail,
+    mockUseMutation: useMutation,
+  }
+})
 
 vi.mock('convex/react', () => ({
   useMutation: mockUseMutation,
@@ -15,8 +22,6 @@ vi.mock('../../../convex/_generated/api', () => ({
     },
   },
 }))
-
-import { useTestUser } from '../useTestUser'
 
 describe('useTestUser', () => {
   beforeEach(() => {
