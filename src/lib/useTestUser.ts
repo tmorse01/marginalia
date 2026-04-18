@@ -15,17 +15,23 @@ const GUEST_EMAIL_DOMAIN = 'guest.marginalia'
 const DEFAULT_GUEST_NAME = 'Guest User'
 const MAX_EMAIL_LENGTH = 254
 const MAX_NAME_LENGTH = 100
-const BASIC_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const BASIC_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 function isValidEmail(value: string) {
   return value.length > 0 && value.length <= MAX_EMAIL_LENGTH && BASIC_EMAIL_PATTERN.test(value)
 }
 
-function normalizeName(value: string | null) {
-  if (!value) return DEFAULT_GUEST_NAME
+function normalizeName(value: string | null, fallback: string) {
+  if (!value) return fallback
   const trimmed = value.trim()
-  if (!trimmed) return DEFAULT_GUEST_NAME
+  if (!trimmed) return fallback
   return trimmed.slice(0, MAX_NAME_LENGTH)
+}
+
+function getNameFallbackFromEmail(email: string) {
+  const localPart = email.split('@')[0]?.trim()
+  if (!localPart) return 'User'
+  return localPart.slice(0, MAX_NAME_LENGTH)
 }
 
 function generateAnonId() {
@@ -42,16 +48,19 @@ function generateAnonId() {
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
   }
 
-  throw new Error('Unable to generate secure anonymous identity')
+  throw new Error(
+    'Unable to generate secure anonymous identity: crypto API unavailable. Use a modern browser over HTTPS.'
+  )
 }
 
 function getOrCreateLocalIdentity() {
   const storedEmail = localStorage.getItem(USER_EMAIL_KEY)
-  const storedName = normalizeName(localStorage.getItem(USER_NAME_KEY))
 
   if (storedEmail && isValidEmail(storedEmail)) {
-    localStorage.setItem(USER_NAME_KEY, storedName)
-    return { email: storedEmail, name: storedName }
+    const storedName = localStorage.getItem(USER_NAME_KEY)
+    const name = normalizeName(storedName, getNameFallbackFromEmail(storedEmail))
+    localStorage.setItem(USER_NAME_KEY, name)
+    return { email: storedEmail, name }
   }
 
   const existingAnonId = localStorage.getItem(ANON_ID_KEY)

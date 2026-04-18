@@ -69,6 +69,23 @@ describe('useTestUser', () => {
     })
   })
 
+  it('uses stored account email with derived fallback name when name is missing', async () => {
+    localStorage.setItem('marginalia_user_email', 'owner@example.com')
+    mockGetOrCreateUserFromEmail.mockResolvedValue('user_account_derived_name')
+
+    const { result } = renderHook(() => useTestUser())
+
+    await waitFor(() => {
+      expect(result.current).toBe('user_account_derived_name')
+    })
+
+    expect(mockGetOrCreateUserFromEmail).toHaveBeenCalledWith({
+      email: 'owner@example.com',
+      name: 'owner',
+    })
+    expect(localStorage.getItem('marginalia_user_name')).toBe('owner')
+  })
+
   it('falls back to null when user creation fails', async () => {
     mockGetOrCreateUserFromEmail.mockRejectedValue(new Error('network error'))
 
