@@ -13,6 +13,20 @@ const ANON_ID_KEY = 'marginalia_anon_id'
 const GUEST_EMAIL_DOMAIN = 'guest.marginalia'
 
 const DEFAULT_GUEST_NAME = 'Guest User'
+const MAX_EMAIL_LENGTH = 254
+const MAX_NAME_LENGTH = 100
+const BASIC_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isValidEmail(value: string) {
+  return value.length > 0 && value.length <= MAX_EMAIL_LENGTH && BASIC_EMAIL_PATTERN.test(value)
+}
+
+function normalizeName(value: string | null) {
+  if (!value) return DEFAULT_GUEST_NAME
+  const trimmed = value.trim()
+  if (!trimmed) return DEFAULT_GUEST_NAME
+  return trimmed.slice(0, MAX_NAME_LENGTH)
+}
 
 function generateAnonId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -22,7 +36,10 @@ function generateAnonId() {
   if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
     const bytes = new Uint8Array(16)
     crypto.getRandomValues(bytes)
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+    bytes[6] = (bytes[6] & 0x0f) | 0x40
+    bytes[8] = (bytes[8] & 0x3f) | 0x80
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
   }
 
   throw new Error('Unable to generate secure anonymous identity')
@@ -30,14 +47,11 @@ function generateAnonId() {
 
 function getOrCreateLocalIdentity() {
   const storedEmail = localStorage.getItem(USER_EMAIL_KEY)
-  const storedName = localStorage.getItem(USER_NAME_KEY)
+  const storedName = normalizeName(localStorage.getItem(USER_NAME_KEY))
 
-  if (storedEmail) {
-    const name = storedName || DEFAULT_GUEST_NAME
-    if (!storedName) {
-      localStorage.setItem(USER_NAME_KEY, name)
-    }
-    return { email: storedEmail, name }
+  if (storedEmail && isValidEmail(storedEmail)) {
+    localStorage.setItem(USER_NAME_KEY, storedName)
+    return { email: storedEmail, name: storedName }
   }
 
   const existingAnonId = localStorage.getItem(ANON_ID_KEY)

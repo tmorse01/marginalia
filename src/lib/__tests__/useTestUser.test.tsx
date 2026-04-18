@@ -78,4 +78,21 @@ describe('useTestUser', () => {
       expect(result.current).toBe(null)
     })
   })
+
+  it('ignores invalid stored email and regenerates guest identity', async () => {
+    localStorage.setItem('marginalia_user_email', 'not-an-email')
+    localStorage.setItem('marginalia_user_name', 'Existing Name')
+    mockGetOrCreateUserFromEmail.mockResolvedValue('user_regenerated_1')
+
+    const { result } = renderHook(() => useTestUser())
+
+    await waitFor(() => {
+      expect(result.current).toBe('user_regenerated_1')
+    })
+
+    expect(mockGetOrCreateUserFromEmail).toHaveBeenCalledWith({
+      email: expect.stringMatching(/^anon-.*@guest\.marginalia$/),
+      name: 'Guest User',
+    })
+  })
 })
