@@ -1,8 +1,5 @@
 /**
- * Temporary hook to get test user ID for development
- * This will be replaced when auth is re-implemented
- * 
- * SECURITY: Only works in development mode to prevent unauthorized access in production
+ * Hook to get or create a persistent local user identity without auth.
  */
 
 import { useEffect, useState } from 'react'
@@ -10,47 +7,68 @@ import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 
-/**
- * Check if we're in development mode
- * Test user should only be available in development to prevent:
- * - Unauthorized AI access in production
- * - Unauthorized premium features in production
- * - Unexpected API costs from public usage
- */
-const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development'
+const USER_EMAIL_KEY = 'marginalia_user_email'
+const USER_NAME_KEY = 'marginalia_user_name'
+const ANON_ID_KEY = 'marginalia_anon_id'
+const USER_ID_KEY = 'marginalia_user_id'
+
+const DEFAULT_GUEST_NAME = 'Guest User'
+
+function generateAnonId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function getOrCreateLocalIdentity() {
+  const storedEmail = localStorage.getItem(USER_EMAIL_KEY)
+  const storedName = localStorage.getItem(USER_NAME_KEY)
+
+  if (storedEmail) {
+    const name = storedName || DEFAULT_GUEST_NAME
+    if (!storedName) {
+      localStorage.setItem(USER_NAME_KEY, name)
+    }
+    return { email: storedEmail, name }
+  }
+
+  const existingAnonId = localStorage.getItem(ANON_ID_KEY)
+  const anonId = existingAnonId || generateAnonId()
+  if (!existingAnonId) {
+    localStorage.setItem(ANON_ID_KEY, anonId)
+  }
+
+  const email = `anon-${anonId}@guest.marginalia`
+  const name = DEFAULT_GUEST_NAME
+  localStorage.setItem(USER_EMAIL_KEY, email)
+  localStorage.setItem(USER_NAME_KEY, name)
+
+  return { email, name }
+}
 
 /**
- * Hook to get or create the test user (test@example.com)
- * ONLY WORKS IN DEVELOPMENT MODE
- * 
- * In production, returns null immediately to prevent security issues
- * 
- * @returns user ID in dev, null in production, undefined while loading
+ * @returns user ID when available, null on failure, undefined while loading
  */
 export function useTestUser(): Id<'users'> | null | undefined {
-  const getOrCreateTestUser = useMutation(api.users.getOrCreateTestUser)
+  const getOrCreateUserFromEmail = useMutation(api.users.getOrCreateUserFromEmail)
   const [userId, setUserId] = useState<Id<'users'> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // In production, immediately return null without making any API calls
-    if (!isDevelopment) {
-      setUserId(null)
-      setIsLoading(false)
-      return
-    }
-
     let mounted = true
 
     const fetchUser = async () => {
       try {
-        const id = await getOrCreateTestUser()
+        const identity = getOrCreateLocalIdentity()
+        const id = await getOrCreateUserFromEmail(identity)
         if (mounted) {
           setUserId(id)
+          localStorage.setItem(USER_ID_KEY, id)
           setIsLoading(false)
         }
       } catch (error) {
-        console.error('Failed to get test user:', error)
+        console.error('Failed to get local user:', error)
         if (mounted) {
           setUserId(null)
           setIsLoading(false)
@@ -63,7 +81,7 @@ export function useTestUser(): Id<'users'> | null | undefined {
     return () => {
       mounted = false
     }
-  }, [getOrCreateTestUser])
+  }, [getOrCreateUserFromEmail])
 
   if (isLoading) {
     return undefined // Still loading
