@@ -10,7 +10,7 @@ import type { Id } from '../../convex/_generated/dataModel'
 const USER_EMAIL_KEY = 'marginalia_user_email'
 const USER_NAME_KEY = 'marginalia_user_name'
 const ANON_ID_KEY = 'marginalia_anon_id'
-const USER_ID_KEY = 'marginalia_user_id'
+const GUEST_EMAIL_DOMAIN = 'guest.marginalia'
 
 const DEFAULT_GUEST_NAME = 'Guest User'
 
@@ -18,7 +18,14 @@ function generateAnonId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
   }
-  return `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  throw new Error('Unable to generate secure anonymous identity')
 }
 
 function getOrCreateLocalIdentity() {
@@ -39,7 +46,7 @@ function getOrCreateLocalIdentity() {
     localStorage.setItem(ANON_ID_KEY, anonId)
   }
 
-  const email = `anon-${anonId}@guest.marginalia`
+  const email = `anon-${anonId}@${GUEST_EMAIL_DOMAIN}`
   const name = DEFAULT_GUEST_NAME
   localStorage.setItem(USER_EMAIL_KEY, email)
   localStorage.setItem(USER_NAME_KEY, name)
@@ -64,7 +71,6 @@ export function useTestUser(): Id<'users'> | null | undefined {
         const id = await getOrCreateUserFromEmail(identity)
         if (mounted) {
           setUserId(id)
-          localStorage.setItem(USER_ID_KEY, id)
           setIsLoading(false)
         }
       } catch (error) {

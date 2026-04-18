@@ -50,7 +50,6 @@ describe('useTestUser', () => {
     expect(localStorage.getItem('marginalia_user_email')).toMatch(/^anon-.*@guest\.marginalia$/)
     expect(localStorage.getItem('marginalia_user_name')).toBe('Guest User')
     expect(localStorage.getItem('marginalia_anon_id')).toBeTruthy()
-    expect(localStorage.getItem('marginalia_user_id')).toBe('user_anon_1')
   })
 
   it('uses existing account identity when email and name are already stored', async () => {
