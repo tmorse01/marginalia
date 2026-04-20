@@ -20,6 +20,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Plus, Folder, FileText, Search, X } from 'lucide-react'
 import { useTestUser } from '../../lib/useTestUser'
 import AlertToast from '../AlertToast'
+import BackendUnavailableNotice from '../BackendUnavailableNotice'
 import FileTreeItem from './FileTreeItem'
 import type {
   DragEndEvent,
@@ -640,7 +641,15 @@ export default function FileTree() {
 
 
 
-  if (folders === undefined || notes === undefined || userId === undefined) {
+  if (userId === null) {
+    return (
+      <div className="p-3">
+        <BackendUnavailableNotice />
+      </div>
+    )
+  }
+
+  if (folders === undefined || notes === undefined) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="loading loading-spinner"></span>

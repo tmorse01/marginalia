@@ -58,10 +58,10 @@ export default function NotePageHeader({
   activeUsers,
 }: NotePageHeaderProps) {
   const aiChatEnabled = useAIChatFlag()
-  // Get folder path
-  const folderPath = note.folderId
-    ? useQuery(api.folders.getPath, { folderId: note.folderId })
-    : null
+  const folderPath = useQuery(
+    api.folders.getPath,
+    note.folderId ? { folderId: note.folderId } : 'skip'
+  )
 
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState(note.title)

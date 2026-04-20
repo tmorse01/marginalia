@@ -7,6 +7,7 @@ import { useSidebar } from '../lib/sidebar-context'
 import { useTestUser } from '../lib/useTestUser'
 import LandingPage from '../components/landing/LandingPage'
 import NoteCard from '../components/NoteCard'
+import BackendUnavailableNotice from '../components/BackendUnavailableNotice'
 import type { Id } from 'convex/_generated/dataModel'
 
 export const Route = createFileRoute('/')({
@@ -25,14 +26,13 @@ function HomePage() {
   const [selectedFolderId, setSelectedFolderId] = useState<Id<'folders'> | 'all'>('all')
   const [sortBy, setSortBy] = useState<SortOption>('updated')
 
-  // Set landing page flag when showing landing page
   useEffect(() => {
-    if (notes !== undefined && notes.length === 0) {
+    if (userId && notes !== undefined && notes.length === 0) {
       setIsLandingPage(true)
       return () => setIsLandingPage(false)
     }
     return () => setIsLandingPage(false)
-  }, [notes, setIsLandingPage])
+  }, [notes, setIsLandingPage, userId])
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -103,6 +103,14 @@ function HomePage() {
     if (!folders) return new Map<Id<'folders'>, string>()
     return new Map(folders.map((f: { _id: Id<'folders'>; name: string }) => [f._id, f.name]))
   }, [folders])
+
+  if (userId === null) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <BackendUnavailableNotice />
+      </div>
+    )
+  }
 
   // Show landing page for first-time users (no notes yet)
   if (notes !== undefined && notes.length === 0) {

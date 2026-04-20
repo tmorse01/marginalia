@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, beforeEach, it, vi } from 'vitest'
-import { useTestUser } from '../useTestUser'
+import { useLocalUserIdResolution } from '../useTestUser'
 
 const { mockGetOrCreateUserFromEmail, mockUseMutation } = vi.hoisted(() => {
   const getOrCreateUserFromEmail = vi.fn()
@@ -23,17 +23,18 @@ vi.mock('../../../convex/_generated/api', () => ({
   },
 }))
 
-describe('useTestUser', () => {
+describe('useLocalUserIdResolution', () => {
   beforeEach(() => {
     localStorage.clear()
     mockGetOrCreateUserFromEmail.mockReset()
     mockUseMutation.mockClear()
+    vi.stubEnv('VITE_CONVEX_URL', 'https://test.convex.cloud')
   })
 
   it('creates and stores an anonymous identity when no account exists', async () => {
     mockGetOrCreateUserFromEmail.mockResolvedValue('user_anon_1')
 
-    const { result } = renderHook(() => useTestUser())
+    const { result } = renderHook(() => useLocalUserIdResolution())
 
     expect(result.current).toBe(undefined)
 
@@ -57,7 +58,7 @@ describe('useTestUser', () => {
     localStorage.setItem('marginalia_user_name', 'Account User')
     mockGetOrCreateUserFromEmail.mockResolvedValue('user_account_1')
 
-    const { result } = renderHook(() => useTestUser())
+    const { result } = renderHook(() => useLocalUserIdResolution())
 
     await waitFor(() => {
       expect(result.current).toBe('user_account_1')
@@ -73,7 +74,7 @@ describe('useTestUser', () => {
     localStorage.setItem('marginalia_user_email', 'owner@example.com')
     mockGetOrCreateUserFromEmail.mockResolvedValue('user_account_derived_name')
 
-    const { result } = renderHook(() => useTestUser())
+    const { result } = renderHook(() => useLocalUserIdResolution())
 
     await waitFor(() => {
       expect(result.current).toBe('user_account_derived_name')
@@ -89,11 +90,23 @@ describe('useTestUser', () => {
   it('falls back to null when user creation fails', async () => {
     mockGetOrCreateUserFromEmail.mockRejectedValue(new Error('network error'))
 
-    const { result } = renderHook(() => useTestUser())
+    const { result } = renderHook(() => useLocalUserIdResolution())
 
     await waitFor(() => {
       expect(result.current).toBe(null)
     })
+  })
+
+  it('resolves to null when VITE_CONVEX_URL is not set', async () => {
+    vi.stubEnv('VITE_CONVEX_URL', '')
+
+    const { result } = renderHook(() => useLocalUserIdResolution())
+
+    await waitFor(() => {
+      expect(result.current).toBe(null)
+    })
+
+    expect(mockGetOrCreateUserFromEmail).not.toHaveBeenCalled()
   })
 
   it('ignores invalid stored email and regenerates guest identity', async () => {
@@ -101,7 +114,7 @@ describe('useTestUser', () => {
     localStorage.setItem('marginalia_user_name', 'Existing Name')
     mockGetOrCreateUserFromEmail.mockResolvedValue('user_regenerated_1')
 
-    const { result } = renderHook(() => useTestUser())
+    const { result } = renderHook(() => useLocalUserIdResolution())
 
     await waitFor(() => {
       expect(result.current).toBe('user_regenerated_1')

@@ -1,8 +1,8 @@
 /**
- * Hook to get or create a persistent local user identity without auth.
+ * Local user identity (Convex) — resolved once at the app shell.
  */
 
-import { useEffect, useState } from 'react'
+import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -16,6 +16,9 @@ const DEFAULT_GUEST_NAME = 'Guest User'
 const MAX_EMAIL_LENGTH = 254
 const MAX_NAME_LENGTH = 100
 const BASIC_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+/** After this, we stop waiting on Convex so the shell can render the error path. */
+const USER_RESOLVE_TIMEOUT_MS = 20_000
 
 function isValidEmail(value: string) {
   return value.length > 0 && value.length <= MAX_EMAIL_LENGTH && BASIC_EMAIL_PATTERN.test(value)
@@ -77,10 +80,17 @@ function getOrCreateLocalIdentity() {
   return { email, name }
 }
 
+export type CurrentUserContextValue =
+  | { status: 'loading' }
+  | { status: 'ready'; userId: Id<'users'> | null }
+
+const CurrentUserContext = createContext<CurrentUserContextValue | null>(null)
+
 /**
- * @returns user ID when available, null on failure, undefined while loading
+ * Resolves local user id once. Used by {@link CurrentUserProvider} and unit tests.
+ * @returns undefined while loading, null on failure, user id when ready
  */
-export function useTestUser(): Id<'users'> | null | undefined {
+export function useLocalUserIdResolution(): Id<'users'> | null | undefined {
   const getOrCreateUserFromEmail = useMutation(api.users.getOrCreateUserFromEmail)
   const [userId, setUserId] = useState<Id<'users'> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -89,14 +99,37 @@ export function useTestUser(): Id<'users'> | null | undefined {
     let mounted = true
 
     const fetchUser = async () => {
+      const convexUrl = (import.meta.env.VITE_CONVEX_URL as string | undefined)?.trim()
+      if (!convexUrl) {
+        console.error(
+          'useLocalUserIdResolution: VITE_CONVEX_URL is not set. Set it to your Convex .cloud URL and restart the dev server.'
+        )
+        if (mounted) {
+          setUserId(null)
+          setIsLoading(false)
+        }
+        return
+      }
+
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
       try {
         const identity = getOrCreateLocalIdentity()
-        const id = await getOrCreateUserFromEmail(identity)
+        const id = await Promise.race([
+          getOrCreateUserFromEmail(identity),
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(
+              () => reject(new Error(`Timed out after ${USER_RESOLVE_TIMEOUT_MS}ms waiting for Convex`)),
+              USER_RESOLVE_TIMEOUT_MS
+            )
+          }),
+        ])
+        if (timeoutId !== undefined) clearTimeout(timeoutId)
         if (mounted) {
           setUserId(id)
           setIsLoading(false)
         }
       } catch (error) {
+        if (timeoutId !== undefined) clearTimeout(timeoutId)
         console.error('Failed to get local user:', error)
         if (mounted) {
           setUserId(null)
@@ -113,8 +146,42 @@ export function useTestUser(): Id<'users'> | null | undefined {
   }, [getOrCreateUserFromEmail])
 
   if (isLoading) {
-    return undefined // Still loading
+    return undefined
   }
 
   return userId
+}
+
+export function CurrentUserProvider({ children }: { children: ReactNode }) {
+  const userIdOrPending = useLocalUserIdResolution()
+  const value: CurrentUserContextValue =
+    userIdOrPending === undefined ? { status: 'loading' } : { status: 'ready', userId: userIdOrPending }
+
+  return createElement(CurrentUserContext.Provider, { value }, children)
+}
+
+/** For {@link AppShellGate} in the root route (must sit inside {@link CurrentUserProvider}). */
+export function useCurrentUserShellState(): CurrentUserContextValue {
+  const ctx = useContext(CurrentUserContext)
+  if (!ctx) {
+    throw new Error('useCurrentUserShellState must be used within CurrentUserProvider')
+  }
+  return ctx
+}
+
+/**
+ * Resolved user id for the authenticated app shell. Do not call until the shell has mounted
+ * (i.e. not while {@link useCurrentUserShellState} is loading).
+ */
+export function useTestUser(): Id<'users'> | null {
+  const ctx = useContext(CurrentUserContext)
+  if (!ctx) {
+    throw new Error('useTestUser must be used within CurrentUserProvider')
+  }
+  if (ctx.status === 'loading') {
+    throw new Error(
+      'useTestUser was called while the user is still loading. This component should render only inside AppLayout after bootstrap.'
+    )
+  }
+  return ctx.userId
 }

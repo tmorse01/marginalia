@@ -272,13 +272,13 @@ export default function AIChatPanel({
     )
   }
 
-  if (currentUserId === undefined) {
+  if (currentUserId === null) {
     return (
       <div className="flex flex-col h-full items-center justify-center p-6">
         <Bot size={48} className="text-primary mx-auto mb-4 opacity-50" />
         <h3 className="font-bold text-lg mb-2">AI Assistant</h3>
         <p className="text-sm text-base-content/60 mb-4 text-center">
-          AI assistant is not available
+          AI assistant is not available (backend unreachable).
         </p>
       </div>
     )

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useQuery, useMutation } from 'convex/react'
@@ -11,12 +12,20 @@ vi.mock('convex/react', () => ({
 
 // Mock router
 vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to, ...rest }: { children?: ReactNode; to?: string }) => (
+    <a href={typeof to === 'string' ? to : '#'} {...rest}>
+      {children}
+    </a>
+  ),
   useNavigate: vi.fn(() => vi.fn()),
+  useRouterState: vi.fn(() => ({
+    location: { pathname: '/', href: '/' },
+    matches: [] as unknown[],
+  })),
 }))
 
-// Mock auth
-vi.mock('../../lib/auth', () => ({
-  useCurrentUser: vi.fn(() => 'user-123'),
+vi.mock('../../lib/useTestUser', () => ({
+  useTestUser: vi.fn(() => 'user-123' as any),
 }))
 
 // Mock FileTreeItem
@@ -80,14 +89,12 @@ describe('FileTree', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(useQuery as any).mockImplementation((query: any) => {
-      if (query.name === 'list') {
-        return mockFolders
-      }
-      if (query.name === 'listUserNotes') {
-        return mockNotes
-      }
-      return undefined
+    let useQueryCall = 0
+    ;(useQuery as any).mockImplementation((_query: unknown, args: unknown) => {
+      if (args === 'skip') return undefined
+      useQueryCall += 1
+      // FileTree calls folders.list then listUserNotes on each render
+      return useQueryCall % 2 === 1 ? mockFolders : mockNotes
     })
     ;(useMutation as any).mockReturnValue(vi.fn())
   })
@@ -98,10 +105,11 @@ describe('FileTree', () => {
   })
 
   it('shows empty state when no files', () => {
-    ;(useQuery as any).mockImplementation((query: any) => {
-      if (query.name === 'list') return []
-      if (query.name === 'listUserNotes') return []
-      return undefined
+    let useQueryCall = 0
+    ;(useQuery as any).mockImplementation((_query: unknown, args: unknown) => {
+      if (args === 'skip') return undefined
+      useQueryCall += 1
+      return useQueryCall % 2 === 1 ? [] : []
     })
 
     render(<FileTree />)
@@ -148,10 +156,11 @@ describe('FileTree', () => {
 
   it('handles creating new note', async () => {
     const createNote = vi.fn().mockResolvedValue('new-note-id')
-    ;(useMutation as any).mockImplementation((mutation: any) => {
-      if (mutation.name === 'create' && mutation.path.includes('notes')) {
-        return createNote
-      }
+    let mutationCall = 0
+    ;(useMutation as any).mockImplementation(() => {
+      mutationCall += 1
+      // FileTree registers 6 mutations per render; api.notes.create is 5th
+      if ((mutationCall - 1) % 6 === 4) return createNote
       return vi.fn()
     })
 
@@ -166,10 +175,10 @@ describe('FileTree', () => {
 
   it('handles creating new folder', async () => {
     const createFolder = vi.fn().mockResolvedValue('new-folder-id')
-    ;(useMutation as any).mockImplementation((mutation: any) => {
-      if (mutation.name === 'create' && mutation.path.includes('folders')) {
-        return createFolder
-      }
+    let mutationCall = 0
+    ;(useMutation as any).mockImplementation(() => {
+      mutationCall += 1
+      if ((mutationCall - 1) % 6 === 5) return createFolder
       return vi.fn()
     })
 

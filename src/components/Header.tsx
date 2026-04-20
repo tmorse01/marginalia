@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Menu, X, PanelLeft } from 'lucide-react'
+import { Menu, X, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { useSidebar } from '../lib/sidebar-context'
 import Logo from './Logo'
@@ -12,28 +12,35 @@ export default function Header() {
   return (
     <>
       <header className="navbar bg-base-300 shadow-lg fixed top-0 left-0 right-0 z-50">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           {!isLandingPage && (
             <button
+              type="button"
               onClick={toggleCollapse}
-              className="btn btn-ghost btn-square"
+              className="btn btn-ghost btn-square shrink-0"
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <PanelLeft className="size-[1.2em]" strokeWidth={2.5} />
+              <Menu className="size-[1.35em]" strokeWidth={2.25} />
             </button>
           )}
-          <Link to="/" className="text-xl gap-2 flex items-center">
-            <Logo />
-            Marginalia
+          <Link
+            to="/"
+            className="flex min-w-0 items-center gap-2.5 rounded-lg border border-base-content/15 bg-base-200/90 px-3 py-1.5 shadow-sm transition-colors hover:border-primary/35 hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Logo className="h-7 w-7 shrink-0" />
+            <span className="truncate text-lg font-semibold tracking-tight text-base-content">
+              Marginalia
+            </span>
           </Link>
         </div>
         <div className="ml-auto flex items-center gap-4">
           <button
+            type="button"
             onClick={() => setIsOpen(true)}
             className="btn btn-square btn-ghost lg:hidden"
-            aria-label="Open menu"
+            aria-label="Open settings and theme"
           >
-            <Menu className="size-[1.2em]" strokeWidth={2.5} />
+            <MoreVertical className="size-[1.2em]" strokeWidth={2.25} />
           </button>
           <div className="hidden lg:flex lg:items-center lg:gap-4">
             <ThemeSelector />

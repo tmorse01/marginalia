@@ -9,6 +9,7 @@ import AppLayout from '../components/AppLayout'
 import LandingLayout from '../components/LandingLayout'
 import { SidebarProvider } from '../lib/sidebar-context'
 import { convex } from '../lib/convex'
+import { CurrentUserProvider, useCurrentUserShellState } from '../lib/useTestUser'
 
 import appCss from '../styles.css?url'
 
@@ -62,17 +63,27 @@ function NotFoundComponent() {
   )
 }
 
+function AppShellGate({ children }: { children: React.ReactNode }) {
+  const userState = useCurrentUserShellState()
+  if (userState.status === 'loading') {
+    return null
+  }
+  return <AppLayout>{children}</AppLayout>
+}
+
 function RootDocumentContent({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const isLandingRoute = location.pathname === '/landing'
 
-  // Landing page uses LandingLayout, all other routes use AppLayout
   if (isLandingRoute) {
     return <LandingLayout>{children}</LandingLayout>
   }
 
-  // All other routes use AppLayout (no authentication required)
-  return <AppLayout>{children}</AppLayout>
+  return (
+    <CurrentUserProvider>
+      <AppShellGate>{children}</AppShellGate>
+    </CurrentUserProvider>
+  )
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {

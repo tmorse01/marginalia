@@ -6,12 +6,6 @@ export default function Sidebar() {
   const { isCollapsed, setIsCollapsed, isLandingPage } = useSidebar()
   const [isMobile, setIsMobile] = useState(false)
 
-  // Don't render sidebar on landing page
-  if (isLandingPage) {
-    return null
-  }
-
-  // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024) // lg breakpoint
@@ -24,6 +18,10 @@ export default function Sidebar() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [setIsCollapsed])
+
+  if (isLandingPage) {
+    return null
+  }
 
   // On mobile, sidebar should be hidden by default
   if (isMobile && isCollapsed) {

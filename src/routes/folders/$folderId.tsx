@@ -3,6 +3,7 @@ import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { Home, ChevronRight, Folder, FileText, Plus } from 'lucide-react'
 import { useTestUser } from '../../lib/useTestUser'
+import BackendUnavailableNotice from '../../components/BackendUnavailableNotice'
 import type { Id } from 'convex/_generated/dataModel'
 
 export const Route = createFileRoute('/folders/$folderId')({
@@ -20,7 +21,15 @@ function FolderView() {
     currentUserId ? { folderId: folderId as any, userId: currentUserId } : 'skip'
   )
 
-  if (folder === undefined || contents === undefined || currentUserId === undefined) {
+  if (currentUserId === null) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <BackendUnavailableNotice />
+      </div>
+    )
+  }
+
+  if (folder === undefined || contents === undefined) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="loading loading-spinner loading-lg"></span>
