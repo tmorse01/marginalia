@@ -1,5 +1,3 @@
-import { useQuery } from 'convex/react'
-import { api } from 'convex/_generated/api'
 import type { Id } from 'convex/_generated/dataModel'
 
 interface PresenceEntry {
@@ -17,14 +15,13 @@ interface PresenceIndicatorProps {
 }
 
 export default function PresenceIndicator({
-  noteId,
+  noteId: _noteId,
   currentUserId,
-  activeUsers: activeUsersProp,
+  activeUsers,
 }: PresenceIndicatorProps) {
-  // For MVP, presence is simplified - will be enhanced later
-  const activeUsers =
-    activeUsersProp ??
-    useQuery(api.presence.getActiveUsers, { noteId })
+  // Presence data always comes from the parent (e.g. NotePageHeader) to avoid a second
+  // subscription and to keep hook order stable — `activeUsers ?? useQuery(...)` was invalid
+  // because `[]` is not nullish, so `useQuery` stopped running after the first load.
 
   if (!activeUsers || activeUsers.length === 0) {
     return null

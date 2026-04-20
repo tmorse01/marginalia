@@ -30,36 +30,22 @@ const ENABLE_AI_CHAT_ENV = import.meta.env.VITE_ENABLE_AI_CHAT === 'true';
  * @returns boolean - true if inline editor should be enabled
  */
 export function useInlineEditorFlag(): boolean {
-  // During SSR (server-side rendering), window is undefined
-  // We must use the env var fallback since ConvexProvider isn't available yet
-  const isBrowser = typeof window !== 'undefined';
-  
-  if (!isBrowser) {
-    // SSR: use env var only
-    return ENABLE_INLINE_EDITOR_ENV;
+  const isBrowser = typeof window !== 'undefined'
+
+  // Always call useQuery (Rules of Hooks / SSR). Skip on the server; never return early
+  // before hooks — that produced a different hook count between SSR and the client.
+  const convexFlag = useQuery(
+    api.featureFlags.get,
+    isBrowser
+      ? { key: 'inline_editor', defaultValue: ENABLE_INLINE_EDITOR_ENV }
+      : 'skip'
+  )
+
+  if (!isBrowser || convexFlag === undefined) {
+    return ENABLE_INLINE_EDITOR_ENV
   }
 
-  // Try to get flag from Convex (runtime, can be toggled without rebuild)
-  // Type assertion needed until Convex generates API types (run `npx convex dev`)
-  const featureFlagsAPI = (api as any).featureFlags;
-  
-  if (!featureFlagsAPI?.get) {
-    // Convex API not available yet, use env var
-    return ENABLE_INLINE_EDITOR_ENV;
-  }
-
-  // Only call useQuery in browser environment where ConvexProvider is available
-  const convexFlag = useQuery(featureFlagsAPI.get, {
-    key: "inline_editor",
-    defaultValue: ENABLE_INLINE_EDITOR_ENV, // Fallback to env var
-  });
-
-  // If Convex query is loading or failed, fall back to env var
-  if (convexFlag === undefined) {
-    return ENABLE_INLINE_EDITOR_ENV;
-  }
-
-  return convexFlag;
+  return convexFlag
 }
 
 /**
@@ -74,36 +60,20 @@ export function useInlineEditorFlag(): boolean {
  * @returns boolean - true if AI chat should be enabled
  */
 export function useAIChatFlag(): boolean {
-  // During SSR (server-side rendering), window is undefined
-  // We must use the env var fallback since ConvexProvider isn't available yet
-  const isBrowser = typeof window !== 'undefined';
-  
-  if (!isBrowser) {
-    // SSR: use env var only
-    return ENABLE_AI_CHAT_ENV;
+  const isBrowser = typeof window !== 'undefined'
+
+  const convexFlag = useQuery(
+    api.featureFlags.get,
+    isBrowser
+      ? { key: 'ai_chat', defaultValue: ENABLE_AI_CHAT_ENV }
+      : 'skip'
+  )
+
+  if (!isBrowser || convexFlag === undefined) {
+    return ENABLE_AI_CHAT_ENV
   }
 
-  // Try to get flag from Convex (runtime, can be toggled without rebuild)
-  // Type assertion needed until Convex generates API types (run `npx convex dev`)
-  const featureFlagsAPI = (api as any).featureFlags;
-  
-  if (!featureFlagsAPI?.get) {
-    // Convex API not available yet, use env var
-    return ENABLE_AI_CHAT_ENV;
-  }
-
-  // Only call useQuery in browser environment where ConvexProvider is available
-  const convexFlag = useQuery(featureFlagsAPI.get, {
-    key: "ai_chat",
-    defaultValue: ENABLE_AI_CHAT_ENV, // Fallback to env var
-  });
-
-  // If Convex query is loading or failed, fall back to env var
-  if (convexFlag === undefined) {
-    return ENABLE_AI_CHAT_ENV;
-  }
-
-  return convexFlag;
+  return convexFlag
 }
 
 /**
