@@ -1,8 +1,5 @@
 /**
- * Temporary hook to get test user ID for development
- * This will be replaced when auth is re-implemented
- * 
- * SECURITY: Only works in development mode to prevent unauthorized access in production
+ * Hook to get or create a persistent local user identity without auth.
  */
 
 import { useEffect, useState } from 'react'
@@ -10,47 +7,97 @@ import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 
-/**
- * Check if we're in development mode
- * Test user should only be available in development to prevent:
- * - Unauthorized AI access in production
- * - Unauthorized premium features in production
- * - Unexpected API costs from public usage
- */
-const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development'
+const USER_EMAIL_KEY = 'marginalia_user_email'
+const USER_NAME_KEY = 'marginalia_user_name'
+const ANON_ID_KEY = 'marginalia_anon_id'
+const GUEST_EMAIL_DOMAIN = 'guest.marginalia'
+
+const DEFAULT_GUEST_NAME = 'Guest User'
+const MAX_EMAIL_LENGTH = 254
+const MAX_NAME_LENGTH = 100
+const BASIC_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+function isValidEmail(value: string) {
+  return value.length > 0 && value.length <= MAX_EMAIL_LENGTH && BASIC_EMAIL_PATTERN.test(value)
+}
+
+function normalizeName(value: string | null, fallback: string) {
+  if (!value) return fallback
+  const trimmed = value.trim()
+  if (!trimmed) return fallback
+  return trimmed.slice(0, MAX_NAME_LENGTH)
+}
+
+function getNameFallbackFromEmail(email: string) {
+  const localPart = email.split('@')[0]?.trim()
+  if (!localPart) return 'User'
+  return localPart.slice(0, MAX_NAME_LENGTH)
+}
+
+function generateAnonId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    bytes[6] = (bytes[6] & 0x0f) | 0x40
+    bytes[8] = (bytes[8] & 0x3f) | 0x80
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+  }
+
+  throw new Error(
+    'Unable to generate secure anonymous identity: crypto API unavailable. Use a modern browser over HTTPS.'
+  )
+}
+
+function getOrCreateLocalIdentity() {
+  const storedEmail = localStorage.getItem(USER_EMAIL_KEY)
+
+  if (storedEmail && isValidEmail(storedEmail)) {
+    const storedName = localStorage.getItem(USER_NAME_KEY)
+    const name = normalizeName(storedName, getNameFallbackFromEmail(storedEmail))
+    localStorage.setItem(USER_NAME_KEY, name)
+    return { email: storedEmail, name }
+  }
+
+  const existingAnonId = localStorage.getItem(ANON_ID_KEY)
+  const anonId = existingAnonId || generateAnonId()
+  if (!existingAnonId) {
+    localStorage.setItem(ANON_ID_KEY, anonId)
+  }
+
+  const email = `anon-${anonId}@${GUEST_EMAIL_DOMAIN}`
+  const name = DEFAULT_GUEST_NAME
+  localStorage.setItem(USER_EMAIL_KEY, email)
+  localStorage.setItem(USER_NAME_KEY, name)
+
+  return { email, name }
+}
 
 /**
- * Hook to get or create the test user (test@example.com)
- * ONLY WORKS IN DEVELOPMENT MODE
- * 
- * In production, returns null immediately to prevent security issues
- * 
- * @returns user ID in dev, null in production, undefined while loading
+ * @returns user ID when available, null on failure, undefined while loading
  */
 export function useTestUser(): Id<'users'> | null | undefined {
-  const getOrCreateTestUser = useMutation(api.users.getOrCreateTestUser)
+  const getOrCreateUserFromEmail = useMutation(api.users.getOrCreateUserFromEmail)
   const [userId, setUserId] = useState<Id<'users'> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // In production, immediately return null without making any API calls
-    if (!isDevelopment) {
-      setUserId(null)
-      setIsLoading(false)
-      return
-    }
-
     let mounted = true
 
     const fetchUser = async () => {
       try {
-        const id = await getOrCreateTestUser()
+        const identity = getOrCreateLocalIdentity()
+        const id = await getOrCreateUserFromEmail(identity)
         if (mounted) {
           setUserId(id)
           setIsLoading(false)
         }
       } catch (error) {
-        console.error('Failed to get test user:', error)
+        console.error('Failed to get local user:', error)
         if (mounted) {
           setUserId(null)
           setIsLoading(false)
@@ -63,7 +110,7 @@ export function useTestUser(): Id<'users'> | null | undefined {
     return () => {
       mounted = false
     }
-  }, [getOrCreateTestUser])
+  }, [getOrCreateUserFromEmail])
 
   if (isLoading) {
     return undefined // Still loading
