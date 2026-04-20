@@ -4,6 +4,7 @@ import { useMutation } from 'convex/react'
 import { api } from 'convex/_generated/api'
 import { useTestUser } from '../../lib/useTestUser'
 import AlertToast from '../../components/AlertToast'
+import BackendUnavailableNotice from '../../components/BackendUnavailableNotice'
 
 export const Route = createFileRoute('/notes/new')({
   component: NewNotePage,
@@ -116,6 +117,14 @@ function NewNotePage() {
         <div className="flex justify-center items-center h-64">
           <span className="loading loading-spinner loading-lg"></span>
         </div>
+      </div>
+    )
+  }
+
+  if (userId === null) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <BackendUnavailableNotice />
       </div>
     )
   }

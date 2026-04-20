@@ -14,6 +14,7 @@ import NotePageHeader from '../../components/NotePageHeader'
 import MarkdownCheatSheetModal from '../../components/MarkdownCheatSheetModal'
 import { useTestUser } from '../../lib/useTestUser'
 import { useNotePresence } from '../../lib/presence'
+import BackendUnavailableNotice from '../../components/BackendUnavailableNotice'
 
 export const Route = createFileRoute('/notes/$noteId')({
   component: NotePage,
@@ -102,7 +103,23 @@ function NotePage() {
     cursorEnd: isEditing ? cursorEnd : undefined,
   })
 
-  if (note === undefined || currentUserId === undefined) {
+  if (currentUserId === undefined) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    )
+  }
+
+  if (currentUserId === null) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <BackendUnavailableNotice />
+      </div>
+    )
+  }
+
+  if (note === undefined) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="loading loading-spinner loading-lg"></span>

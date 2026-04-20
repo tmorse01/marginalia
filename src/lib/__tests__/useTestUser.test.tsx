@@ -28,6 +28,7 @@ describe('useTestUser', () => {
     localStorage.clear()
     mockGetOrCreateUserFromEmail.mockReset()
     mockUseMutation.mockClear()
+    vi.stubEnv('VITE_CONVEX_URL', 'https://test.convex.cloud')
   })
 
   it('creates and stores an anonymous identity when no account exists', async () => {
@@ -94,6 +95,18 @@ describe('useTestUser', () => {
     await waitFor(() => {
       expect(result.current).toBe(null)
     })
+  })
+
+  it('resolves to null when VITE_CONVEX_URL is not set', async () => {
+    vi.stubEnv('VITE_CONVEX_URL', '')
+
+    const { result } = renderHook(() => useTestUser())
+
+    await waitFor(() => {
+      expect(result.current).toBe(null)
+    })
+
+    expect(mockGetOrCreateUserFromEmail).not.toHaveBeenCalled()
   })
 
   it('ignores invalid stored email and regenerates guest identity', async () => {

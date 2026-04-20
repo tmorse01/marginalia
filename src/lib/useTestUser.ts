@@ -17,6 +17,9 @@ const MAX_EMAIL_LENGTH = 254
 const MAX_NAME_LENGTH = 100
 const BASIC_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
+/** After this, we stop waiting on Convex so the UI does not spin forever. */
+const USER_RESOLVE_TIMEOUT_MS = 20_000
+
 function isValidEmail(value: string) {
   return value.length > 0 && value.length <= MAX_EMAIL_LENGTH && BASIC_EMAIL_PATTERN.test(value)
 }
@@ -89,14 +92,37 @@ export function useTestUser(): Id<'users'> | null | undefined {
     let mounted = true
 
     const fetchUser = async () => {
+      const convexUrl = (import.meta.env.VITE_CONVEX_URL as string | undefined)?.trim()
+      if (!convexUrl) {
+        console.error(
+          'useTestUser: VITE_CONVEX_URL is not set. Set it to your Convex .cloud URL and restart the dev server.'
+        )
+        if (mounted) {
+          setUserId(null)
+          setIsLoading(false)
+        }
+        return
+      }
+
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
       try {
         const identity = getOrCreateLocalIdentity()
-        const id = await getOrCreateUserFromEmail(identity)
+        const id = await Promise.race([
+          getOrCreateUserFromEmail(identity),
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(
+              () => reject(new Error(`Timed out after ${USER_RESOLVE_TIMEOUT_MS}ms waiting for Convex`)),
+              USER_RESOLVE_TIMEOUT_MS
+            )
+          }),
+        ])
+        if (timeoutId !== undefined) clearTimeout(timeoutId)
         if (mounted) {
           setUserId(id)
           setIsLoading(false)
         }
       } catch (error) {
+        if (timeoutId !== undefined) clearTimeout(timeoutId)
         console.error('Failed to get local user:', error)
         if (mounted) {
           setUserId(null)
