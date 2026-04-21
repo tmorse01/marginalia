@@ -1,14 +1,22 @@
+import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  ...authTables,
   users: defineTable({
-    name: v.string(),
-    email: v.string(),
-    createdAt: v.number(),
-    subscriptionTier: v.optional(v.string()), // e.g., "free", "premium", "enterprise" - determines feature access
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    subscriptionTier: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
   })
-    .index("by_email", ["email"]),
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
 
   folders: defineTable({
     name: v.string(),
@@ -126,4 +134,3 @@ export default defineSchema({
     .index("by_note", ["noteId"])
     .index("by_note_and_user", ["noteId", "userId"]),
 });
-

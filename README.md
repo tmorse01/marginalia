@@ -55,6 +55,27 @@ A real-time collaborative Markdown notes application built with TanStack Start, 
 
 6. Open [http://localhost:3000](http://localhost:3000)
 
+### Convex Auth (optional Google sign-in)
+
+The app works **without signing in**: a local guest profile is created automatically (`@guest.marginalia`). Signing in with Google is optional and lets you attach a real account; guest notes can be merged into that account on first sign-in.
+
+Configure these on your **Convex deployment** ([Environment Variables](https://docs.convex.dev/production/environment-variables)):
+
+| Variable | Purpose |
+| -------- | ------- |
+| `SITE_URL` | Your app origin for OAuth redirects (e.g. `http://localhost:3000` locally; your production URL in prod). |
+| `JWT_PRIVATE_KEY` / `JWKS` | RS256 keys for Convex Auth JWTs. Generate with the [Convex Auth manual setup](https://labs.convex.dev/auth/setup/manual) script and paste into the dashboard. |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID. |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret. |
+
+In the [Google Cloud Console](https://console.cloud.google.com/), set the OAuth **Authorized redirect URI** to:
+
+`https://<your-deployment>.convex.site/api/auth/callback/google`
+
+(Use your Convex **HTTP Actions** URL from the dashboard; it ends in `.convex.site`, not `.convex.cloud`.)
+
+For production, create a separate Google OAuth client for your deployed app URL and set `SITE_URL` to that origin. Optionally set `CUSTOM_AUTH_SITE_URL` if you use a [custom Convex HTTP domain](https://labs.convex.dev/auth/advanced#custom-callback-and-sign-in-urls).
+
 ## Project Structure
 
 ```

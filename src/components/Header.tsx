@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Menu, X, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { useSidebar } from '../lib/sidebar-context'
+import AuthAccountMenu from './AuthAccountMenu'
 import Logo from './Logo'
 import ThemeSelector from './ThemeSelector'
 
@@ -43,6 +44,7 @@ export default function Header() {
             <MoreVertical className="size-[1.2em]" strokeWidth={2.25} />
           </button>
           <div className="hidden lg:flex lg:items-center lg:gap-4">
+            <AuthAccountMenu />
             <ThemeSelector />
           </div>
         </div>
@@ -67,6 +69,10 @@ export default function Header() {
               </button>
             </div>
             <nav className="flex-1 p-4 overflow-y-auto">
+              <div className="mb-4 px-2">
+                <div className="text-sm font-medium mb-2">Account</div>
+                <AuthAccountMenu />
+              </div>
               <div className="mt-4 pt-4 border-t border-base-300">
                 <div className="text-sm font-medium mb-2 px-2">Theme</div>
                 <div className="px-2">

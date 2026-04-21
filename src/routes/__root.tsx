@@ -1,7 +1,14 @@
-import { HeadContent, Scripts, createRootRoute, useLocation, Link } from '@tanstack/react-router'
+import {
+  HeadContent,
+  Scripts,
+  createRootRoute,
+  useLocation,
+  Link,
+  useNavigate,
+} from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { ConvexProvider } from 'convex/react'
+import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { useEffect } from 'react'
 import { Home, FileQuestion } from 'lucide-react'
 
@@ -12,6 +19,23 @@ import { convex } from '../lib/convex'
 import { CurrentUserProvider, useCurrentUserShellState } from '../lib/useTestUser'
 
 import appCss from '../styles.css?url'
+
+function ConvexAuthProviderWithRouter({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
+  return (
+    <ConvexAuthProvider
+      client={convex}
+      replaceURL={(href) => {
+        if (import.meta.env.DEV) {
+          console.debug('[auth] ConvexAuthProvider.replaceURL', { href })
+        }
+        void navigate({ to: href, replace: true })
+      }}
+    >
+      {children}
+    </ConvexAuthProvider>
+  )
+}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -129,7 +153,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="bg-base-200 text-base-content">
-        <ConvexProvider client={convex}>
+        <ConvexAuthProviderWithRouter>
           {content}
           <TanStackDevtools
             config={{
@@ -142,7 +166,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               },
             ]}
           />
-        </ConvexProvider>
+        </ConvexAuthProviderWithRouter>
         <Scripts />
       </body>
     </html>

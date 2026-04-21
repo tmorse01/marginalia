@@ -189,7 +189,7 @@ export default function FolderPicker({
   if (folders === undefined) {
     return (
       <div className="flex justify-center items-center p-8">
-        <span className="loading loading-spinner"></span>
+        <span className="loading loading-spinner" role="status" aria-label="Loading folders" />
       </div>
     )
   }

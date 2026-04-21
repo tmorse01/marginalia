@@ -8,9 +8,8 @@ vi.mock('convex/react', () => ({
   useQuery: vi.fn(),
 }))
 
-// Mock auth
-vi.mock('../../lib/auth', () => ({
-  useCurrentUser: vi.fn(() => 'user-123'),
+vi.mock('../../lib/useTestUser', () => ({
+  useTestUser: vi.fn(() => 'user-123'),
 }))
 
 describe('FolderPicker', () => {

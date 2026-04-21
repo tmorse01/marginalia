@@ -142,6 +142,7 @@ function NotePage() {
         <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 sm:px-4 lg:px-6">
           <NotePageHeader
             note={note}
+            workingTitle={title}
             isEditing={isEditing}
             onEditToggle={() => {
               setIsEditing(!isEditing)
@@ -185,21 +186,24 @@ function NotePage() {
       <div className="flex gap-4 w-full">
         {/* Main Content Area - fixed width to prevent layout shift */}
         <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl px-2 py-4 sm:px-4 sm:py-8 lg:px-6 w-full">
-          <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden w-full">
-            {/* Content Section */}
-            <div className="card-body p-3 sm:p-6 w-full">
-              {isEditing ? (
-                <>
-                  <div className="flex justify-end mb-3">
-                    <button
-                      onClick={() => setShowCheatSheet(true)}
-                      className="btn btn-sm btn-ghost tooltip tooltip-bottom"
-                      data-tip="Markdown Cheat Sheet"
-                    >
-                      <HelpCircle size={18} />
-                      <span className="hidden sm:inline ml-2">Markdown Help</span>
-                    </button>
-                  </div>
+          <div className="relative w-full">
+            {isEditing && (
+              <div className="absolute bottom-full right-0 z-10 mb-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowCheatSheet(true)}
+                  className="btn btn-sm btn-ghost tooltip tooltip-bottom"
+                  data-tip="Markdown Cheat Sheet"
+                >
+                  <HelpCircle size={18} />
+                  <span className="hidden sm:inline ml-2">Markdown Help</span>
+                </button>
+              </div>
+            )}
+            <div className="card bg-base-100 border-2 border-base-300 shadow-2xl rounded-2xl overflow-hidden w-full">
+              {/* Content Section */}
+              <div className="card-body p-3 sm:p-6 w-full">
+                {isEditing ? (
                   <NoteEditor
                     content={content}
                     onChange={setContent}
@@ -225,43 +229,43 @@ function NotePage() {
                       setAiSuggestion(null)
                     }}
                   />
-                </>
-              ) : (
-                <>
-                  <LiveCursorOverlay
-                    content={content}
-                    entries={activeUsers ?? []}
-                    currentUserId={currentUserId}
-                  />
-                  <CommentableContent
-                    content={content}
-                    noteId={noteId as any}
-                    commentsByLine={lineComments}
-                    currentUserId={currentUserId}
-                    noteOwnerId={note.ownerId}
-                    selectedLine={selectedLine}
-                    onLineSelect={setSelectedLine}
-                    onOpenComments={() => {
-                      if (!showSidebar) {
-                        setShowSidebar(true)
-                        setActiveTab('comments')
-                      }
-                    }}
-                  />
-                </>
-              )}
+                ) : (
+                  <>
+                    <LiveCursorOverlay
+                      content={content}
+                      entries={activeUsers ?? []}
+                      currentUserId={currentUserId}
+                    />
+                    <CommentableContent
+                      content={content}
+                      noteId={noteId as any}
+                      commentsByLine={lineComments}
+                      currentUserId={currentUserId}
+                      noteOwnerId={note.ownerId}
+                      selectedLine={selectedLine}
+                      onLineSelect={setSelectedLine}
+                      onOpenComments={() => {
+                        if (!showSidebar) {
+                          setShowSidebar(true)
+                          setActiveTab('comments')
+                        }
+                      }}
+                    />
+                  </>
+                )}
 
-              {!isEditing && (
-                <div id="comments-section" className="mt-6">
-                  <GeneralComments
-                    noteId={noteId as any}
-                    threads={generalComments}
-                    currentUserId={currentUserId}
-                    noteOwnerId={note.ownerId}
-                  />
-                  <ActivityLog noteId={noteId as any} />
-                </div>
-              )}
+                {!isEditing && (
+                  <div id="comments-section" className="mt-6">
+                    <GeneralComments
+                      noteId={noteId as any}
+                      threads={generalComments}
+                      currentUserId={currentUserId}
+                      noteOwnerId={note.ownerId}
+                    />
+                    <ActivityLog noteId={noteId as any} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

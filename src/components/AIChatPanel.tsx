@@ -465,7 +465,10 @@ function MessageBubble({
                   }}
                 />
               ) : (
-                <MarkdownViewer content={message.content} />
+                <MarkdownViewer
+                  content={message.content}
+                  highlightDelay={150}
+                />
               )}
             </div>
           ) : (

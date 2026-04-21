@@ -1,5 +1,11 @@
 import { v } from "convex/values";
+import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+
+function authorFields(user: Doc<"users"> | null): { name: string; email: string } | null {
+  if (!user) return null;
+  return { name: user.name ?? "", email: user.email ?? "" };
+}
 
 // Helper to check if user has access to a note
 async function checkNoteAccess(
@@ -381,10 +387,8 @@ export const listByNote = query({
           ...comment,
           lineNumber,
           lineContent,
-          author: author ? { name: author.name, email: author.email } : null,
-          resolvedByUser: resolvedByUser
-            ? { name: resolvedByUser.name, email: resolvedByUser.email }
-            : null,
+          author: authorFields(author),
+          resolvedByUser: authorFields(resolvedByUser),
         };
       })
     );
@@ -465,7 +469,7 @@ export const listByLine = query({
           ...comment,
           lineNumber,
           lineContent,
-          author: author ? { name: author.name, email: author.email } : null,
+          author: authorFields(author),
         };
       })
     );
@@ -520,16 +524,14 @@ export const getThread = query({
         const replyAuthor = await ctx.db.get(replyItem.authorId);
         return {
           ...replyItem,
-          author: replyAuthor
-            ? { name: replyAuthor.name, email: replyAuthor.email }
-            : null,
+          author: authorFields(replyAuthor),
         };
       })
     );
 
     return {
       ...parentComment,
-      author: author ? { name: author.name, email: author.email } : null,
+      author: authorFields(author),
       replies: enrichedReplies.sort((a, b) => a.createdAt - b.createdAt),
     };
   },
@@ -586,7 +588,7 @@ export const list = query({
         const author = await ctx.db.get(comment.authorId);
         return {
           ...comment,
-          author: author ? { name: author.name, email: author.email } : null,
+          author: authorFields(author),
         };
       })
     );

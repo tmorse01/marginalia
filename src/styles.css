@@ -116,6 +116,11 @@ code {
   @apply bg-transparent p-0;
 }
 
+/* react-shiki: keep Daisy surface; themes may set an inline pre background */
+.prose pre.markdown-shiki-block.rs-root {
+  background-color: hsl(var(--b2) / 1) !important;
+}
+
 .prose blockquote {
   @apply border-l-4 border-primary pl-4 italic my-4;
 }
@@ -321,8 +326,56 @@ code {
   min-height: 1.5em;
 }
 
+/*
+  When we wrap block-level markdown nodes (p, ul, pre, etc.) inside
+  `.commentable-line`, default margins can collapse outside the wrapper.
+  That creates “dead zones” where hover briefly leaves/enters, causing flicker.
+*/
+.commentable-line-content :where(
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  ul,
+  ol,
+  blockquote,
+  pre
+) {
+  margin: 0;
+}
+
 .commentable-line:hover {
   @apply bg-base-200/30;
+}
+
+.commentable-line:hover .comment-indicator {
+  @apply opacity-100;
+}
+
+.commentable-codeblock {
+  @apply relative;
+}
+
+/* Overlay gutter for per-source-line comments inside fenced blocks */
+.commentable-codeblock-gutter {
+  @apply absolute right-0 top-0 flex flex-col;
+  padding-top: 1rem;   /* match p-4 */
+  padding-bottom: 1rem;
+  padding-right: 0.5rem;
+  pointer-events: none; /* enable only on buttons */
+}
+
+.commentable-codeblock-line {
+  min-height: 1.25rem; /* match leading-5 */
+}
+
+.commentable-codeblock-gutter .comment-indicator {
+  pointer-events: auto;
+  top: 0;
+  transform: none;
 }
 
 .commentable-line.has-comments {
@@ -346,7 +399,7 @@ code {
   @apply absolute right-0 top-1/2 -translate-y-1/2
          w-6 h-6 rounded-full flex items-center justify-center
          text-base-content/40
-         cursor-pointer transition-all duration-150
+         cursor-pointer transition-all duration-200
          opacity-0 hover:opacity-100;
 }
 

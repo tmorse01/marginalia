@@ -1,15 +1,26 @@
 /**
- * Local user identity (Convex) — resolved once at the app shell.
+ * App user identity: optional Convex Auth (Google) or local guest (`@guest.marginalia`).
  */
 
-import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from 'react'
-import { useMutation } from 'convex/react'
+import {
+  createContext,
+  createElement,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import { useConvexAuth, useMutation, useQuery } from 'convex/react'
+
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 
 const USER_EMAIL_KEY = 'marginalia_user_email'
 const USER_NAME_KEY = 'marginalia_user_name'
 const ANON_ID_KEY = 'marginalia_anon_id'
+/** Convex `users` row id for the current guest session; merged into Google account on sign-in. */
+export const GUEST_CONVEX_USER_ID_KEY = 'marginalia_guest_convex_user_id'
 const GUEST_EMAIL_DOMAIN = 'guest.marginalia'
 
 const DEFAULT_GUEST_NAME = 'Guest User'
@@ -87,26 +98,73 @@ export type CurrentUserContextValue =
 const CurrentUserContext = createContext<CurrentUserContextValue | null>(null)
 
 /**
- * Resolves local user id once. Used by {@link CurrentUserProvider} and unit tests.
- * @returns undefined while loading, null on failure, user id when ready
+ * Resolves app user id (Google session or guest). Used by {@link CurrentUserProvider} and unit tests.
  */
 export function useLocalUserIdResolution(): Id<'users'> | null | undefined {
+  const { isLoading: authLoading, isAuthenticated } = useConvexAuth()
+  const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip')
+  const mergeGuestIntoAuthedUser = useMutation(api.users.mergeGuestIntoAuthedUser)
   const getOrCreateUserFromEmail = useMutation(api.users.getOrCreateUserFromEmail)
-  const [userId, setUserId] = useState<Id<'users'> | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+
+  const [guestUserId, setGuestUserId] = useState<Id<'users'> | null>(null)
+  const [guestLoading, setGuestLoading] = useState(true)
+  const mergeStarted = useRef(false)
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
+    console.debug('[auth] useLocalUserIdResolution', {
+      authLoading,
+      isAuthenticated,
+      viewerState: viewer === undefined ? 'loading' : viewer === null ? 'null' : 'doc',
+      viewerId: viewer && viewer !== null ? viewer._id : null,
+      guestLoading,
+      guestUserId,
+      hasPendingGuestId: Boolean(localStorage.getItem(GUEST_CONVEX_USER_ID_KEY)),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated, viewer, guestLoading, guestUserId])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      mergeStarted.current = false
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated || mergeStarted.current) return
+    const pending = localStorage.getItem(GUEST_CONVEX_USER_ID_KEY)
+    if (!pending) return
+    mergeStarted.current = true
+    if (import.meta.env.DEV) {
+      console.debug('[auth] mergeGuestIntoAuthedUser:start', { guestUserId: pending })
+    }
+    void mergeGuestIntoAuthedUser({ guestUserId: pending as Id<'users'> })
+      .then(() => {
+        localStorage.removeItem(GUEST_CONVEX_USER_ID_KEY)
+        if (import.meta.env.DEV) {
+          console.debug('[auth] mergeGuestIntoAuthedUser:success')
+        }
+      })
+      .catch((error) => {
+        console.error('mergeGuestIntoAuthedUser failed:', error)
+        mergeStarted.current = false
+      })
+  }, [isAuthenticated, mergeGuestIntoAuthedUser])
+
+  useEffect(() => {
+    if (authLoading || isAuthenticated) return
+
     let mounted = true
 
-    const fetchUser = async () => {
+    const fetchGuest = async () => {
       const convexUrl = (import.meta.env.VITE_CONVEX_URL as string | undefined)?.trim()
       if (!convexUrl) {
         console.error(
           'useLocalUserIdResolution: VITE_CONVEX_URL is not set. Set it to your Convex .cloud URL and restart the dev server.'
         )
         if (mounted) {
-          setUserId(null)
-          setIsLoading(false)
+          setGuestUserId(null)
+          setGuestLoading(false)
         }
         return
       }
@@ -114,6 +172,9 @@ export function useLocalUserIdResolution(): Id<'users'> | null | undefined {
       let timeoutId: ReturnType<typeof setTimeout> | undefined
       try {
         const identity = getOrCreateLocalIdentity()
+        if (import.meta.env.DEV) {
+          console.debug('[auth] guest:getOrCreateUserFromEmail:start', { email: identity.email })
+        }
         const id = await Promise.race([
           getOrCreateUserFromEmail(identity),
           new Promise<never>((_, reject) => {
@@ -125,31 +186,49 @@ export function useLocalUserIdResolution(): Id<'users'> | null | undefined {
         ])
         if (timeoutId !== undefined) clearTimeout(timeoutId)
         if (mounted) {
-          setUserId(id)
-          setIsLoading(false)
+          localStorage.setItem(GUEST_CONVEX_USER_ID_KEY, id)
+          setGuestUserId(id)
+          setGuestLoading(false)
+          if (import.meta.env.DEV) {
+            console.debug('[auth] guest:getOrCreateUserFromEmail:success', { userId: id })
+          }
         }
       } catch (error) {
         if (timeoutId !== undefined) clearTimeout(timeoutId)
         console.error('Failed to get local user:', error)
         if (mounted) {
-          setUserId(null)
-          setIsLoading(false)
+          setGuestUserId(null)
+          setGuestLoading(false)
         }
       }
     }
 
-    fetchUser()
+    void fetchGuest()
 
     return () => {
       mounted = false
     }
-  }, [getOrCreateUserFromEmail])
+  }, [authLoading, isAuthenticated, getOrCreateUserFromEmail])
 
-  if (isLoading) {
+  if (authLoading) {
     return undefined
   }
 
-  return userId
+  if (isAuthenticated) {
+    if (viewer === undefined) {
+      return undefined
+    }
+    if (viewer === null) {
+      return null
+    }
+    return viewer._id
+  }
+
+  if (guestLoading) {
+    return undefined
+  }
+
+  return guestUserId
 }
 
 export function CurrentUserProvider({ children }: { children: ReactNode }) {

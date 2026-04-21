@@ -2,7 +2,16 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { Edit, Eye, Share2, MessageSquare, Home, ChevronRight, Bot, Info } from 'lucide-react'
+import {
+  Edit,
+  Eye,
+  Share2,
+  MessageSquare,
+  Home,
+  ChevronRight,
+  Bot,
+  Info,
+} from 'lucide-react'
 import { useAIChatFlag } from '../lib/feature-flags'
 import PresenceIndicator from './PresenceIndicator'
 import type { Id } from 'convex/_generated/dataModel'
@@ -28,6 +37,8 @@ interface PresenceEntry {
 
 interface NotePageHeaderProps {
   note: NoteData
+  /** Title from page state; updates immediately on rename before Convex catches up */
+  workingTitle: string
   isEditing: boolean
   onEditToggle: () => void
   showSidebar: boolean
@@ -44,6 +55,7 @@ interface NotePageHeaderProps {
 
 export default function NotePageHeader({
   note,
+  workingTitle,
   isEditing,
   onEditToggle,
   showSidebar,
@@ -60,19 +72,19 @@ export default function NotePageHeader({
   const aiChatEnabled = useAIChatFlag()
   const folderPath = useQuery(
     api.folders.getPath,
-    note.folderId ? { folderId: note.folderId } : 'skip'
+    note.folderId ? { folderId: note.folderId } : 'skip',
   )
 
   const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [titleValue, setTitleValue] = useState(note.title)
+  const [titleValue, setTitleValue] = useState(workingTitle)
   const titleInputRef = useRef<HTMLInputElement>(null)
 
-  // Update local title when note changes
+  // Update local title when working title changes (server or parent)
   useEffect(() => {
     if (!isEditingTitle) {
-      setTitleValue(note.title)
+      setTitleValue(workingTitle)
     }
-  }, [note.title, isEditingTitle])
+  }, [workingTitle, isEditingTitle])
 
   // Focus input when editing starts
   useEffect(() => {
@@ -82,9 +94,9 @@ export default function NotePageHeader({
     }
   }, [isEditingTitle])
 
-  const handleDoubleClick = () => {
+  const handleStartTitleEdit = () => {
     setIsEditingTitle(true)
-    setTitleValue(note.title)
+    setTitleValue(workingTitle)
   }
 
   const handleTitleSubmit = () => {
@@ -92,13 +104,13 @@ export default function NotePageHeader({
     if (trimmedTitle && trimmedTitle !== note.title) {
       onTitleChange(trimmedTitle)
     } else {
-      setTitleValue(note.title)
+      setTitleValue(workingTitle)
     }
     setIsEditingTitle(false)
   }
 
   const handleTitleCancel = () => {
-    setTitleValue(note.title)
+    setTitleValue(workingTitle)
     setIsEditingTitle(false)
   }
 
@@ -129,7 +141,10 @@ export default function NotePageHeader({
               <div key={folder._id} className="flex items-center gap-2">
                 <ChevronRight size={14} className="text-base-content/40" />
                 <Link
-                  {...({ to: "/folders/$folderId", params: { folderId: folder._id } } as any)}
+                  {...({
+                    to: '/folders/$folderId',
+                    params: { folderId: folder._id },
+                  } as any)}
                   className="text-base-content/70 hover:text-primary transition-colors"
                 >
                   {folder.name}
@@ -139,7 +154,7 @@ export default function NotePageHeader({
             <ChevronRight size={14} className="text-base-content/40" />
           </>
         )}
-        <span className="text-base-content font-medium">{note.title}</span>
+        <span className="text-base-content font-medium">{workingTitle}</span>
       </nav>
 
       {/* Page Actions */}
@@ -158,15 +173,15 @@ export default function NotePageHeader({
             />
           ) : (
             <h1
-              onDoubleClick={handleDoubleClick}
+              onClick={handleStartTitleEdit}
               className="text-2xl font-bold text-base-content cursor-text hover:text-primary transition-colors"
-              title="Double-click to edit"
+              title="Click to rename"
             >
-              {note.title}
+              {workingTitle}
             </h1>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={onCommentsClick}
@@ -203,11 +218,7 @@ export default function NotePageHeader({
             className={`btn btn-sm btn-circle tooltip tooltip-bottom ${isEditing ? 'btn-primary' : 'btn-ghost'}`}
             data-tip={isEditing ? 'View Mode' : 'Edit Mode'}
           >
-            {isEditing ? (
-              <Eye size={18} />
-            ) : (
-              <Edit size={18} />
-            )}
+            {isEditing ? <Eye size={18} /> : <Edit size={18} />}
           </button>
         </div>
       </div>
@@ -225,4 +236,3 @@ export default function NotePageHeader({
     </div>
   )
 }
-
